@@ -36,6 +36,7 @@ use (
 	./go-env
 	./go-envconfig
 	./go-envvalidator
+	./go-etag
 	./go-eventemitter
 	./go-events
 	./go-exponentialbackoff
