@@ -37,6 +37,7 @@ use (
 	./go-env
 	./go-envconfig
 	./go-envvalidator
+	./go-escpos
 	./go-etag
 	./go-eventemitter
 	./go-events
