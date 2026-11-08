@@ -56,13 +56,13 @@ func TestJWT_TamperedSignature(t *testing.T) {
 
 	token, _ := engine.Sign(Claims{Subject: "1", ExpiresAt: time.Now().Add(time.Hour).Unix()})
 
-	// Guaranteed deterministic alteration of the signature
-	lastChar := token[len(token)-1]
-	replacement := "a"
-	if lastChar == 'a' {
-		replacement = "b"
+	parts := strings.Split(token, ".")
+	sig := parts[2]
+	tamperedSig := "A" + sig[1:]
+	if sig[0] == 'A' {
+		tamperedSig = "B" + sig[1:]
 	}
-	tampered := token[:len(token)-1] + replacement
+	tampered := parts[0] + "." + parts[1] + "." + tamperedSig
 
 	_, err := engine.Verify(tampered)
 	if !errors.Is(err, ErrInvalidSignature) {
@@ -124,5 +124,107 @@ func TestJWT_NotBefore(t *testing.T) {
 	_, err := engine.Verify(token)
 	if !errors.Is(err, ErrTokenNotValidYet) {
 		t.Fatalf("expected ErrTokenNotValidYet, got %v", err)
+	}
+}
+
+type TestCustomClaims struct {
+	UserID string `json:"user_id"`
+	Email  string `json:"email"`
+	Role   string `json:"role"`
+	Exp    int64  `json:"exp,omitempty"`
+}
+
+func TestJWT_CustomStruct(t *testing.T) {
+	secret := []byte("custom_secret_key_123")
+	input := TestCustomClaims{
+		UserID: "usr_999",
+		Email:  "test@shopsilo.in",
+		Role:   "manager",
+		Exp:    time.Now().Add(10 * time.Minute).Unix(),
+	}
+
+	tokenStr, err := SignCustom(secret, input)
+	if err != nil {
+		t.Fatalf("SignCustom failed: %v", err)
+	}
+
+	var output TestCustomClaims
+	if err := VerifyCustom(secret, tokenStr, &output); err != nil {
+		t.Fatalf("VerifyCustom failed: %v", err)
+	}
+
+	if output.UserID != input.UserID || output.Email != input.Email || output.Role != input.Role {
+		t.Fatalf("claims mismatch: %+v vs %+v", output, input)
+	}
+}
+
+func TestJWT_DecodeUnverified(t *testing.T) {
+	secret := []byte("secret_xyz")
+	input := TestCustomClaims{
+		UserID: "usr_unverified",
+		Email:  "anon@domain.com",
+	}
+
+	tokenStr, _ := SignCustom(secret, input)
+
+	var output TestCustomClaims
+	if err := DecodeUnverified(tokenStr, &output); err != nil {
+		t.Fatalf("DecodeUnverified failed: %v", err)
+	}
+	if output.UserID != "usr_unverified" {
+		t.Fatalf("expected usr_unverified, got %s", output.UserID)
+	}
+}
+
+func TestJWT_VerifySignatureOnly(t *testing.T) {
+	secret := []byte("secret_refresh")
+	engine, _ := New(secret)
+
+	// Already expired token
+	input := TestCustomClaims{
+		UserID: "usr_refresh_10",
+		Exp:    time.Now().Add(-5 * time.Hour).Unix(),
+	}
+	tokenStr, _ := engine.SignCustom(input)
+
+	// Verify should fail with expired
+	var out1 TestCustomClaims
+	err := engine.VerifyCustom(tokenStr, &out1)
+	if !errors.Is(err, ErrTokenExpired) {
+		t.Fatalf("expected ErrTokenExpired, got %v", err)
+	}
+
+	// VerifySignatureOnly should succeed
+	var out2 TestCustomClaims
+	err = engine.VerifySignatureOnly(tokenStr, &out2)
+	if err != nil {
+		t.Fatalf("VerifySignatureOnly failed: %v", err)
+	}
+	if out2.UserID != "usr_refresh_10" {
+		t.Fatalf("expected usr_refresh_10, got %s", out2.UserID)
+	}
+}
+
+func TestClaims_TopLevelCustomCapture(t *testing.T) {
+	secret := []byte("secret_toplevel")
+	rawJSONToken, _ := SignCustom(secret, map[string]any{
+		"sub":     "subject_1",
+		"user_id": "usr_top",
+		"role":    "admin",
+		"exp":     time.Now().Add(time.Hour).Unix(),
+	})
+
+	claims, err := Verify(secret, rawJSONToken)
+	if err != nil {
+		t.Fatalf("Verify failed: %v", err)
+	}
+	if claims.Subject != "subject_1" {
+		t.Fatalf("expected subject_1, got %s", claims.Subject)
+	}
+	if claims.GetString("user_id") != "usr_top" {
+		t.Fatalf("expected user_id usr_top, got %s", claims.GetString("user_id"))
+	}
+	if claims.GetString("role") != "admin" {
+		t.Fatalf("expected role admin, got %s", claims.GetString("role"))
 	}
 }
