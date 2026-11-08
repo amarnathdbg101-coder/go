@@ -82,9 +82,9 @@ func Parse(raw string, defaultCountryCode string) (*PhoneNumber, error) {
 
 		if defaultCC != "" {
 			countryCode = defaultCC
-			// If digits already start with the default country code digits (e.g. 919876543210)
+			// If digits already start with the default country code digits (e.g. 919876543210 where len is 12)
 			ccDigits := CleanDigits(defaultCC)
-			if strings.HasPrefix(digits, ccDigits) && len(digits) > len(ccDigits)+6 {
+			if strings.HasPrefix(digits, ccDigits) && len(digits) >= len(ccDigits)+9 && len(digits) > 10 {
 				nationalNumber = strings.TrimPrefix(digits, ccDigits)
 			} else {
 				nationalNumber = digits

@@ -53,6 +53,12 @@ func TestParse_DefaultCountryCodeAndTrunkPrefix(t *testing.T) {
 	if err != nil || pn3.E164 != "+919876543210" {
 		t.Fatalf("expected +919876543210, got %+v (err: %v)", pn3, err)
 	}
+
+	// 10-digit number starting with 91 (e.g. 9111111111) should NOT have 91 stripped
+	pn4, err := Parse("9111111111", "+91")
+	if err != nil || pn4.NationalNumber != "9111111111" || pn4.E164 != "+919111111111" {
+		t.Fatalf("expected 10-digit national number 9111111111, got %+v (err: %v)", pn4, err)
+	}
 }
 
 func TestIsValidIndianMobile(t *testing.T) {
