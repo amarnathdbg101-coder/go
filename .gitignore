@@ -1,0 +1,25 @@
+# Binaries and executables
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# Test outputs and profiling
+*.out
+*.prof
+coverage.html
+
+# Temporary and swap files
+*.tmp
+*.swp
+*~
+*.lock
+
+# OS and Editor configurations
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/

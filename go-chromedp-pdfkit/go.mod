@@ -1,0 +1,9 @@
+module github.com/shopsilo/go-chromedp-pdfkit
+
+go 1.26.5
+
+require (
+	github.com/chromedp/cdproto v0.159.2 // indirect
+	github.com/chromedp/chromedp v0.23.0 // indirect
+	github.com/go-json-experiment/json v0.0.0-20260213210345-44df1a37e875 // indirect
+)
