@@ -14,6 +14,7 @@ use (
 	./go-checksum
 	./go-chromedp-pdfkit
 	./go-circuitbreaker
+	./go-cloudflare
 	./go-color
 	./go-colorgrad
 	./go-colorlog
