@@ -64,6 +64,7 @@ use (
 	./go-keyrotator
 	./go-kvstore
 	./go-latch
+	./go-ledger
 	./go-lfu
 	./go-locks
 	./go-lru
