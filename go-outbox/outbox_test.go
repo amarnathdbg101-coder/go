@@ -3,6 +3,7 @@ package gooutbox_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -127,5 +128,50 @@ func TestEngine_ValidationErrors(t *testing.T) {
 	// Empty payload
 	if _, err := engine.Enqueue(ctx, nil, "valid.topic", "agg_1", nil); err != gooutbox.ErrEmptyPayload {
 		t.Fatalf("expected ErrEmptyPayload, got %v", err)
+	}
+}
+
+
+type mockPgxTx struct {
+	executedQuery string
+	executedArgs  []any
+}
+
+func (m *mockPgxTx) Exec(ctx context.Context, query string, args ...any) (any, error) {
+	m.executedQuery = query
+	m.executedArgs = args
+	return nil, nil
+}
+
+func TestSQLStore_CustomColumnsAndPgxDuckTyping(t *testing.T) {
+	store := gooutbox.NewSQLStore(nil, &gooutbox.SQLOptions{
+		TableName:         "custom_outbox",
+		TopicColumn:       "event_type",
+		AggregateIDColumn: "shop_id",
+	})
+
+	mockTx := &mockPgxTx{}
+	ctx := context.Background()
+
+	event, err := gooutbox.NewEvent("order.placed", "shop_999", map[string]string{"order_id": "123"})
+	if err != nil {
+		t.Fatalf("unexpected error creating event: %v", err)
+	}
+
+	if err := store.Save(ctx, mockTx, event); err != nil {
+		t.Fatalf("unexpected error in Save: %v", err)
+	}
+
+	if mockTx.executedQuery == "" {
+		t.Fatal("expected mockPgxTx.Exec to be invoked via reflection")
+	}
+
+	// Verify query references custom columns
+	expectedSub := "INSERT INTO custom_outbox (id, event_type, shop_id"
+	if len(mockTx.executedQuery) < len(expectedSub) || mockTx.executedQuery[:len(expectedSub)] != expectedSub {
+		// Just check contains
+		if !strings.Contains(mockTx.executedQuery, "event_type") || !strings.Contains(mockTx.executedQuery, "shop_id") {
+			t.Fatalf("expected query to contain custom columns, got: %s", mockTx.executedQuery)
+		}
 	}
 }
