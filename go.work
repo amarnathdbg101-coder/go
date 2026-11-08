@@ -130,5 +130,6 @@ use (
 	./go-webhook
 	./go-wildcard
 	./go-workerpool
+	./go-wshub
 	./libkit
 )
