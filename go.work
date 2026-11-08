@@ -45,6 +45,7 @@ use (
 	./go-featureflag
 	./go-fsm
 	./go-fuzzy
+	./go-gemini
 	./go-geohash
 	./go-gopdf-pdfkit
 	./go-hashring
