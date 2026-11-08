@@ -142,3 +142,35 @@ func TestScanRowStruct_Embedded(t *testing.T) {
 		t.Fatalf("expected 3 mapped fields for embedded struct, got %d", len(mapping))
 	}
 }
+
+func TestScanWithColumns(t *testing.T) {
+	columns := []string{"id", "full_name", "unknown_column", "age"}
+	mockValues := []any{int64(42), "Rohan Gupta", "ignored_data", int64(30)}
+
+	var u User
+	err := ScanWithColumns(columns, func(dest ...any) error {
+		if len(dest) != len(mockValues) {
+			t.Fatalf("dest count %d != value count %d", len(dest), len(mockValues))
+		}
+		// Populate values
+		for i := range dest {
+			switch ptr := dest[i].(type) {
+			case *int64:
+				*ptr = mockValues[i].(int64)
+			case *string:
+				*ptr = mockValues[i].(string)
+			case *any:
+				*ptr = mockValues[i]
+			}
+		}
+		return nil
+	}, &u)
+
+	if err != nil {
+		t.Fatalf("ScanWithColumns failed: %v", err)
+	}
+
+	if u.ID != 42 || u.FullName != "Rohan Gupta" || u.Age != 30 {
+		t.Fatalf("user fields mismatch: %+v", u)
+	}
+}

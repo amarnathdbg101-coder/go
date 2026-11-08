@@ -69,8 +69,10 @@ func buildFieldMap(t reflect.Type, indexPrefix []int, m map[string][]int) {
 	}
 }
 
-// ScanRowStruct scans the current row from *sql.Rows into dest (must be pointer to struct).
-func ScanRowStruct(rows *sql.Rows, dest any) error {
+// ScanWithColumns maps column names dynamically to struct fields via `db` tags or field names,
+// then executes scanFn with pointers to the corresponding struct fields.
+// Safely ignores extra database columns that are not present in dest struct.
+func ScanWithColumns(columns []string, scanFn func(dest ...any) error, dest any) error {
 	val := reflect.ValueOf(dest)
 	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Struct {
 		return ErrNotStructPointer
@@ -79,11 +81,6 @@ func ScanRowStruct(rows *sql.Rows, dest any) error {
 	structVal := val.Elem()
 	structType := structVal.Type()
 	fieldMap := getFieldMap(structType)
-
-	columns, err := rows.Columns()
-	if err != nil {
-		return err
-	}
 
 	scanArgs := make([]any, len(columns))
 	var dummy any
@@ -102,7 +99,16 @@ func ScanRowStruct(rows *sql.Rows, dest any) error {
 		}
 	}
 
-	return rows.Scan(scanArgs...)
+	return scanFn(scanArgs...)
+}
+
+// ScanRowStruct scans the current row from *sql.Rows into dest (must be pointer to struct).
+func ScanRowStruct(rows *sql.Rows, dest any) error {
+	columns, err := rows.Columns()
+	if err != nil {
+		return err
+	}
+	return ScanWithColumns(columns, rows.Scan, dest)
 }
 
 // ScanOne scans the first row of rows into a new instance of T and closes rows.
