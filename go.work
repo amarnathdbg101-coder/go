@@ -46,6 +46,7 @@ use (
 	./go-fsm
 	./go-fuzzy
 	./go-gemini
+	./go-geodistance
 	./go-geohash
 	./go-gopdf-pdfkit
 	./go-hashring
