@@ -90,6 +90,7 @@ use (
 	./go-pubsub
 	./go-queryfilter
 	./go-ratelimit
+	./go-reservation
 	./go-resilience
 	./go-retry
 	./go-retryablehttp
