@@ -1,4 +1,4 @@
-module github.com/shopsilo/go-chromedp-pdfkit
+module github.com/amarnathdbg101-coder/go/go-chromedp-pdfkit
 
 go 1.26.5
 

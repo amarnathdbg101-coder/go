@@ -15,7 +15,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/shopsilo/go-image-filekit"
+	"github.com/amarnathdbg101-coder/go/go-image-filekit"
 )
 
 // Helper: Generates a valid in-memory PNG image

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/shopsilo/go-authkit"
+	"github.com/amarnathdbg101-coder/go/go-authkit"
 )
 
 func setupTestEngine(t *testing.T) (*authkit.Engine, *authkit.MemoryUserStore, *otpRecorder) {

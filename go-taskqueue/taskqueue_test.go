@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shopsilo/go-taskqueue"
+	"github.com/amarnathdbg101-coder/go/go-taskqueue"
 )
 
 type WelcomeEmailPayload struct {

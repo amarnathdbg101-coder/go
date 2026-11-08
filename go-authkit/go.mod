@@ -1,4 +1,4 @@
-module github.com/shopsilo/go-authkit
+module github.com/amarnathdbg101-coder/go/go-authkit
 
 go 1.25.0
 

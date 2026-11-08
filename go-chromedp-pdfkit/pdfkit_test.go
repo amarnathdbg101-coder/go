@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	pdfkit "github.com/shopsilo/go-chromedp-pdfkit"
+	pdfkit "github.com/amarnathdbg101-coder/go/go-chromedp-pdfkit"
 )
 
 // -------------------------------------------------------------------------
@@ -76,7 +76,7 @@ func TestGenerateInvoice_FullFlow(t *testing.T) {
 		CompanyPhone:  "+91 98765 43210",
 		CustomerName:  "Rajesh Sharma",
 		CustomerEmail: "rajesh@client.com",
-		Currency:      "₹",
+		Currency:      "â‚¹",
 		Items: []pdfkit.InvoiceItem{
 			{Description: "Mechanical Gaming Keyboard", Quantity: 2, UnitPrice: 3499.00, Total: 6998.00},
 			{Description: "Ergonomic Vertical Mouse", Quantity: 1, UnitPrice: 1899.00, Total: 1899.00},

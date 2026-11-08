@@ -1,4 +1,4 @@
-module github.com/shopsilo/go-gopdf-pdfkit
+module github.com/amarnathdbg101-coder/go/go-gopdf-pdfkit
 
 go 1.25.0
 

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/shopsilo/go-validator"
+	"github.com/amarnathdbg101-coder/go/go-validator"
 )
 
 type SignupPayload struct {

@@ -97,6 +97,7 @@ use (
 	./go-set
 	./go-shutdown
 	./go-slicekit
+	./go-slidingstats
 	./go-slidingwindow
 	./go-slug
 	./go-sortedset
@@ -125,4 +126,5 @@ use (
 	./go-webhook
 	./go-wildcard
 	./go-workerpool
+	./libkit
 )

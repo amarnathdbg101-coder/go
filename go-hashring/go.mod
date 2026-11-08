@@ -1,3 +1,3 @@
-module go-hashring
+module github.com/amarnathdbg101-coder/go/go-hashring
 
 go 1.22

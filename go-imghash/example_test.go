@@ -3,7 +3,7 @@ package imghash_test
 import (
 	"fmt"
 
-	"github.com/shopsilo/go-imghash"
+	"github.com/amarnathdbg101-coder/go/go-imghash"
 )
 
 func ExampleSimilar() {

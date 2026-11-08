@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shopsilo/go-cachekit"
+	"github.com/amarnathdbg101-coder/go/go-cachekit"
 )
 
 type Product struct {

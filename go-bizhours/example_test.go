@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/shopsilo/go-bizhours"
+	"github.com/amarnathdbg101-coder/go/go-bizhours"
 )
 
 func ExampleCalculateAt() {

@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/shopsilo/go-idempotency"
+	"github.com/amarnathdbg101-coder/go/go-idempotency"
 )
 
 func ExampleEngine_Middleware() {

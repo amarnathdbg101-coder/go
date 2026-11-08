@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/shopsilo/go-secguard"
+	"github.com/amarnathdbg101-coder/go/go-secguard"
 )
 
 func ExampleMiddleware() {

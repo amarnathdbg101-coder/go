@@ -1,3 +1,3 @@
-module github.com/shopsilo/go-secguard
+module github.com/amarnathdbg101-coder/go/go-secguard
 
 go 1.22

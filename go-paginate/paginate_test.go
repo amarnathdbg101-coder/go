@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shopsilo/go-paginate"
+	"github.com/amarnathdbg101-coder/go/go-paginate"
 )
 
 // -------------------------------------------------------------------------

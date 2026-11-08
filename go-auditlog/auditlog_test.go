@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shopsilo/go-auditlog"
+	"github.com/amarnathdbg101-coder/go/go-auditlog"
 )
 
 // -------------------------------------------------------------------------

@@ -1,3 +1,3 @@
-module go-sanitize
+module github.com/amarnathdbg101-coder/go/go-sanitize
 
 go 1.23.0

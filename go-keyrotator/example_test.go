@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/shopsilo/go-keyrotator"
+	"github.com/amarnathdbg101-coder/go/go-keyrotator"
 )
 
 func ExampleRotator_GetNextKey() {

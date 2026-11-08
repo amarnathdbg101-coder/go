@@ -1,6 +1,6 @@
 # C:\Library Master Catalog 📚
 
-> **120 Production-Ready, High-Efficiency, Security-Hardened Go Libraries.**  
+> **125 Production-Ready, High-Efficiency, Security-Hardened Go Libraries.**  
 > Built strictly adhering to the [Master Architecture Blueprint](BLUEPRINT.md).
 
 ---
@@ -129,14 +129,39 @@
 | 118 | **`go-eventemitter`** | [`go-eventemitter`](./go-eventemitter) | Event Pub-Sub Engine with `On`, `Once`, Wildcards & Listener Leak Warnings | ✅ 100% StdLib | ✅ PASS |
 | 119 | **`go-colorlog`** | [`go-colorlog`](./go-colorlog) | Zero-Allocation Structured Terminal Logger with Color Badges & Caller Tracing | ✅ 100% StdLib | ✅ PASS |
 | 120 | **`go-queryfilter`** | [`go-queryfilter`](./go-queryfilter) | Safe REST URL Query to SQL WHERE & ORDER BY Parameterized Builder | ✅ 100% StdLib | ✅ PASS |
+| 121 | **`go-adaptivepool`** | [`go-adaptivepool`](./go-adaptivepool) | Auto-Scaling Elastic Worker Pool with Dynamic Expansion & Idle Worker Eviction | ✅ 100% StdLib | ✅ PASS |
+| 122 | **`go-countingbloom`** | [`go-countingbloom`](./go-countingbloom) | Counting Bloom Filter with Safe Deletion (`Remove`) & Counter Saturation Protection | ✅ 100% StdLib | ✅ PASS |
+| 123 | **`go-mimekit`** | [`go-mimekit`](./go-mimekit) | 512-Byte Magic Byte File Sniffer & Polyglot Executable Defense with Stream Rewinding | ✅ 100% StdLib | ✅ PASS |
+| 124 | **`go-tamperseal`** | [`go-tamperseal`](./go-tamperseal) | Cryptographic Tamper-Proof Data Seal with Expiration & Constant-Time Verification | ✅ 100% StdLib | ✅ PASS |
+| 125 | **`go-slidingstats`** | [`go-slidingstats`](./go-slidingstats) | Rolling Window Streaming Statistics & Latency Percentiles (P50, P90, P95, P99) | ✅ 100% StdLib | ✅ PASS |
+
+---
+
+## 🧰 Developer Tooling: `libkit` CLI
+
+`C:\Library` me build kiye gaye 125 packages ko manage, search, test aur new Clean Architecture Go projects me scaffold karne ke liye dedicated zero-dependency CLI tool:
+
+- **Location**: `C:\Library\libkit`
+- **Binary**: `C:\Library\bin\libkit.exe`
+- **Usage**:
+  - `libkit list` - 125 libraries ka ANSI colored interactive table
+  - `libkit search <term>` - Instant keyword search
+  - `libkit info <name>` - Quickstart demo aur SPEC architecture contract
+  - `libkit test [name|--all]` - Unit test suites execution
+  - `libkit new <project>` - Clean Architecture microservice scaffolding
+  - `libkit add <name>` - Target project ke `go.mod` me local module inject karna
 
 ---
 
 ## 🧪 Batch Test Execution
 
-Sabhi 120 libraries ek single command se test ki ja sakti hain:
+Sabhi 125 libraries ek single command se test ki ja sakti hain:
 
 ```powershell
+# Using libkit CLI:
+C:\Library\bin\libkit.exe test --all
+
+# Or via PowerShell loop:
 $dirs = Get-ChildItem -Path "C:\Library" -Directory
 $failed = @()
 foreach ($d in $dirs) {
@@ -149,7 +174,7 @@ foreach ($d in $dirs) {
     Pop-Location
 }
 if ($failed.Count -eq 0) {
-    Write-Host "ALL 120 LIBRARIES PASSED! (120/120 GREEN)" -ForegroundColor Green
+    Write-Host "ALL LIBRARIES PASSED! (100% GREEN)" -ForegroundColor Green
 } else {
     Write-Host "Failed: $($failed -join ', ')" -ForegroundColor Red
 }

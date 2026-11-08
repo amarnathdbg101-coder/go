@@ -1,3 +1,3 @@
-module github.com/shopsilo/go-idempotency
+module github.com/amarnathdbg101-coder/go/go-idempotency
 
 go 1.22

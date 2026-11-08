@@ -1,3 +1,3 @@
-module go-contenttype
+module github.com/amarnathdbg101-coder/go/go-contenttype
 
 go 1.22

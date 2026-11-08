@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	gopdfkit "github.com/shopsilo/go-gopdf-pdfkit"
+	gopdfkit "github.com/amarnathdbg101-coder/go/go-gopdf-pdfkit"
 )
 
 func sampleInvoice() gopdfkit.Invoice {
@@ -22,7 +22,7 @@ func sampleInvoice() gopdfkit.Invoice {
 		CustomerName:    "Amit Verma",
 		CustomerPhone:   "+91 98111 22233",
 		CustomerAddress: "Sector 62, Noida, UP",
-		Currency:        "₹",
+		Currency:        "â‚¹",
 		Items: []gopdfkit.InvoiceItem{
 			{Description: "Wireless Ergonomic Mouse", Quantity: 2, UnitPrice: 1299.00, Total: 2598.00},
 			{Description: "Type-C Fast Charging Cable 2m", Quantity: 3, UnitPrice: 399.00, Total: 1197.00},
@@ -52,7 +52,7 @@ func TestGenerateInvoicePDF_SpeedAndValidity(t *testing.T) {
 		t.Fatalf("GenerateInvoicePDF failed: %v", err)
 	}
 
-	t.Logf("⚡ Pure Go A4 Invoice generation took: %v (sub-25ms benchmark)", elapsed)
+	t.Logf("âš¡ Pure Go A4 Invoice generation took: %v (sub-25ms benchmark)", elapsed)
 
 	if len(pdfBytes) == 0 {
 		t.Fatalf("expected non-empty PDF bytes")
@@ -90,7 +90,7 @@ func TestGenerateReceiptPDF_80mm(t *testing.T) {
 		ReceiptNo:    "POS-8841",
 		Date:         "07/11/2026 22:30",
 		Cashier:      "Pooja S.",
-		Currency:     "₹",
+		Currency:     "â‚¹",
 		Items: []gopdfkit.ReceiptItem{
 			{Name: "Amul Butter 500g", Qty: 1, Price: 275.00, Amount: 275.00},
 			{Name: "Basmati Rice 5kg", Qty: 1, Price: 499.00, Amount: 499.00},
@@ -111,7 +111,7 @@ func TestGenerateReceiptPDF_80mm(t *testing.T) {
 		t.Fatalf("GenerateReceiptPDF failed: %v", err)
 	}
 
-	t.Logf("⚡ Pure Go 80mm POS Thermal Receipt took: %v", elapsed)
+	t.Logf("âš¡ Pure Go 80mm POS Thermal Receipt took: %v", elapsed)
 
 	if !bytes.HasPrefix(pdfBytes, []byte("%PDF-")) {
 		t.Errorf("expected valid PDF header for thermal receipt")
@@ -119,14 +119,14 @@ func TestGenerateReceiptPDF_80mm(t *testing.T) {
 }
 
 // -------------------------------------------------------------------------
-// 3. UTF-8 Hindi (Devanagari) & Rupee (₹) Symbol Tests
+// 3. UTF-8 Hindi (Devanagari) & Rupee (â‚¹) Symbol Tests
 // -------------------------------------------------------------------------
 
 func TestUnicode_HindiAndRupee(t *testing.T) {
 	inv := sampleInvoice()
 	// Add Hindi Devanagari items
 	inv.Items = append(inv.Items, gopdfkit.InvoiceItem{
-		Description: "पनीर टिक्का मसाला (Paneer Tikka)",
+		Description: "à¤ªà¤¨à¥€à¤° à¤Ÿà¤¿à¤•à¥à¤•à¤¾ à¤®à¤¸à¤¾à¤²à¤¾ (Paneer Tikka)",
 		Quantity:    2,
 		UnitPrice:   350.00,
 		Total:       700.00,
@@ -148,7 +148,7 @@ func TestUnicode_HindiAndRupee(t *testing.T) {
 
 func TestTruncateRunes(t *testing.T) {
 	// Hindi multi-byte runes
-	hindiText := "नमस्ते भारत दुनिया"
+	hindiText := "à¤¨à¤®à¤¸à¥à¤¤à¥‡ à¤­à¤¾à¤°à¤¤ à¤¦à¥à¤¨à¤¿à¤¯à¤¾"
 	truncated := gopdfkit.TruncateRunes(hindiText, 7)
 
 	if len([]rune(truncated)) != 7 {
