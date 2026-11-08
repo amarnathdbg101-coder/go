@@ -76,6 +76,7 @@ use (
 	./go-netkit
 	./go-orderedmap
 	./go-otp
+	./go-outbox
 	./go-paginate
 	./go-password
 	./go-pathkit
