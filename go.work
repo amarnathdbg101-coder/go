@@ -57,6 +57,7 @@ use (
 	./go-idempotency
 	./go-idgen
 	./go-image-filekit
+	./go-imagefx
 	./go-imghash
 	./go-ipkit
 	./go-jsonpath
