@@ -21,6 +21,20 @@ type Querier interface {
 	QueryRow(ctx context.Context, sql string, args ...any) RowScanner
 }
 
+type queryRowFunc func(ctx context.Context, sql string, args ...any) RowScanner
+
+func (f queryRowFunc) QueryRow(ctx context.Context, sql string, args ...any) RowScanner {
+	return f(ctx, sql, args...)
+}
+
+// AdaptQueryRow wraps any QueryRow function returning a type that implements RowScanner
+// (e.g. pgxpool.Pool.QueryRow returning pgx.Row, or *sql.DB.QueryRowContext returning *sql.Row).
+func AdaptQueryRow[T RowScanner](fn func(ctx context.Context, sql string, args ...any) T) Querier {
+	return queryRowFunc(func(ctx context.Context, sql string, args ...any) RowScanner {
+		return fn(ctx, sql, args...)
+	})
+}
+
 // DumpSummary captures details and metrics of a completed database backup dump.
 type DumpSummary struct {
 	BackupID       string         `json:"backup_id"`

@@ -41,6 +41,23 @@ func (m *mockQuerier) QueryRow(ctx context.Context, sql string, args ...any) dbb
 	return &mockRowScanner{val: "[]"}
 }
 
+func TestAdaptQueryRow(t *testing.T) {
+	// Function returning *mockRowScanner (concrete type matching RowScanner)
+	customQueryRow := func(ctx context.Context, sql string, args ...any) *mockRowScanner {
+		return &mockRowScanner{val: `[{"id":1}]`}
+	}
+
+	querier := dbbackup.AdaptQueryRow(customQueryRow)
+	var val string
+	err := querier.QueryRow(context.Background(), "SELECT 1").Scan(&val)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if val != `[{"id":1}]` {
+		t.Errorf("got %q; want %q", val, `[{"id":1}]`)
+	}
+}
+
 func TestDumpTables_Success(t *testing.T) {
 	mock := &mockQuerier{
 		tableData: map[string]string{
