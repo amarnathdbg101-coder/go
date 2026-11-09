@@ -29,6 +29,7 @@ use (
 	./go-crypto
 	./go-csvkit
 	./go-dag
+	./go-dbbackup
 	./go-debounce
 	./go-dedup
 	./go-deepclone
