@@ -119,6 +119,7 @@ use (
 	./go-stopwatch
 	./go-strcase
 	./go-stream
+	./go-studiocomp
 	./go-syncchan
 	./go-syncmap
 	./go-sysinfo
