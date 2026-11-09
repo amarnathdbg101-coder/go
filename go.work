@@ -83,6 +83,7 @@ use (
 	./go-otp
 	./go-outbox
 	./go-paginate
+	./go-parchi
 	./go-password
 	./go-pathkit
 	./go-phone
