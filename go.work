@@ -52,6 +52,7 @@ use (
 	./go-gopdf-pdfkit
 	./go-hashring
 	./go-healthcheck
+	./go-hinglish
 	./go-httpclient
 	./go-humanize
 	./go-idempotency
