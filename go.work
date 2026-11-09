@@ -95,6 +95,7 @@ use (
 	./go-ratelimit
 	./go-reservation
 	./go-resilience
+	./go-retailtaxo
 	./go-retry
 	./go-retryablehttp
 	./go-ringbuffer
