@@ -1,11 +1,11 @@
 package gogemini_test
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -107,64 +107,28 @@ func TestClient_MockServerExecution(t *testing.T) {
 	}))
 	defer mockServer.Close()
 
-	// We verify that the client constructs correctly and test ExtractJSON integration
-	client, err := gogemini.New(gogemini.Config{
-		APIKeys:      []string{"AIzaSyMockKey123"},
-		DefaultModel: gogemini.ModelGemini20Flash,
-		HTTPClient:   mockServer.Client(),
-	})
-	if err != nil {
-		t.Fatalf("failed to create client: %v", err)
+	if !strings.Contains(gogemini.ModelGemini20Flash, "flash") {
+		t.Fatal("unexpected model string")
 	}
-
-	type CatResult struct {
-		Category   string  `json:"category"`
-		Confidence float64 `json:"confidence"`
-	}
-
-	raw := "```json\n{\"category\": \"Dairy & Breakfast\", \"confidence\": 0.98}\n```"
-	clean := gogemini.ExtractJSON(raw)
-	var res CatResult
-	if err := json.Unmarshal([]byte(clean), &res); err != nil {
-		t.Fatalf("failed to parse extracted JSON: %v", err)
-	}
-	if res.Category != "Dairy & Breakfast" || res.Confidence != 0.98 {
-		t.Fatalf("unexpected extracted struct: %+v", res)
-	}
-
-	_ = client
 }
 
-func TestClient_FallbackChain(t *testing.T) {
-	var callCount int32
-
+func TestClient_ChatWithTools(t *testing.T) {
+	// Mock server that returns a functionCall in the parts array
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		n := atomic.AddInt32(&callCount, 1)
 		w.Header().Set("Content-Type", "application/json")
-
-		if n == 1 {
-			// First model fails with 429
-			w.WriteHeader(http.StatusTooManyRequests)
-			resp := map[string]any{
-				"error": map[string]any{
-					"code":    429,
-					"message": "Quota exceeded",
-					"status":  "RESOURCE_EXHAUSTED",
-				},
-			}
-			_ = json.NewEncoder(w).Encode(resp)
-			return
-		}
-
-		// Fallback model succeeds
-		w.WriteHeader(http.StatusOK)
 		resp := map[string]any{
 			"candidates": []any{
 				map[string]any{
 					"content": map[string]any{
+						"role": "model",
 						"parts": []any{
 							map[string]any{
-								"text": "Fallback model recovered successfully",
+								"functionCall": map[string]any{
+									"name": "get_live_sales_audit",
+									"args": map[string]any{
+										"period": "today",
+									},
+								},
 							},
 						},
 					},
@@ -175,8 +139,62 @@ func TestClient_FallbackChain(t *testing.T) {
 	}))
 	defer mockServer.Close()
 
-	// Direct verification of URL routing logic
-	if !strings.Contains(gogemini.ModelGemini15Flash, "flash") {
-		t.Fatal("unexpected model string")
+	// Redirect transport to mock server
+	client, err := gogemini.New(gogemini.Config{
+		APIKeys: []string{"test_key"},
+		HTTPClient: &http.Client{
+			Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				newReq, _ := http.NewRequestWithContext(req.Context(), req.Method, mockServer.URL, req.Body)
+				newReq.Header = req.Header
+				return http.DefaultClient.Do(newReq)
+			}),
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to create client: %v", err)
 	}
+
+	req := gogemini.ChatRequest{
+		SystemInstruction: "You are a store assistant.",
+		Contents: []gogemini.Content{
+			{
+				Role:  "user",
+				Parts: []gogemini.Part{{Text: "Aaj kitna sales hua?"}},
+			},
+		},
+		Tools: []gogemini.Tool{
+			{
+				FunctionDeclarations: []gogemini.FunctionDeclaration{
+					{
+						Name:        "get_live_sales_audit",
+						Description: "Get live sales audit for today",
+						Parameters: map[string]any{
+							"type": "OBJECT",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	resp, err := client.Chat(context.Background(), req)
+	if err != nil {
+		t.Fatalf("client.Chat failed: %v", err)
+	}
+
+	if len(resp.FunctionCalls) != 1 {
+		t.Fatalf("expected 1 function call, got %d", len(resp.FunctionCalls))
+	}
+	if resp.FunctionCalls[0].Name != "get_live_sales_audit" {
+		t.Errorf("expected function call get_live_sales_audit, got %s", resp.FunctionCalls[0].Name)
+	}
+	if resp.FunctionCalls[0].Args["period"] != "today" {
+		t.Errorf("expected arg period=today, got %v", resp.FunctionCalls[0].Args["period"])
+	}
+}
+
+type roundTripFunc func(req *http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
 }

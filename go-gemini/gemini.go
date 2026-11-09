@@ -1,6 +1,6 @@
 // Package gogemini provides a zero-dependency Google Gemini REST SDK featuring
 // multi-key round-robin rotation, 429 rate-limit cooldown quarantine, multi-model fallback,
-// vision OCR, and structured JSON extraction.
+// function calling tools, vision OCR, and structured JSON extraction.
 package gogemini
 
 import (
@@ -58,10 +58,12 @@ func New(cfg Config) (*Client, error) {
 	}, nil
 }
 
-// Part represents a component of a Gemini content turn (text or inline data).
+// Part represents a component of a Gemini content turn (text, inline media, function call, or response).
 type Part struct {
-	Text       string      `json:"text,omitempty"`
-	InlineData *InlineData `json:"inline_data,omitempty"`
+	Text             string            `json:"text,omitempty"`
+	InlineData       *InlineData       `json:"inline_data,omitempty"`
+	FunctionCall     *FunctionCall     `json:"functionCall,omitempty"`
+	FunctionResponse *FunctionResponse `json:"functionResponse,omitempty"`
 }
 
 // InlineData carries base64-encoded media for Gemini vision models.
@@ -70,8 +72,9 @@ type InlineData struct {
 	Data     string `json:"data"`
 }
 
-// Content defines a single prompt turn.
+// Content defines a single prompt or response turn.
 type Content struct {
+	Role  string `json:"role,omitempty"` // "user", "model", "function"
 	Parts []Part `json:"parts"`
 }
 
@@ -82,15 +85,19 @@ type GenerationConfig struct {
 }
 
 type geminiPayload struct {
-	Contents         []Content         `json:"contents"`
-	GenerationConfig *GenerationConfig `json:"generationConfig,omitempty"`
+	SystemInstruction *SystemInstruction `json:"system_instruction,omitempty"`
+	Contents          []Content          `json:"contents"`
+	Tools             []Tool             `json:"tools,omitempty"`
+	GenerationConfig  *GenerationConfig  `json:"generationConfig,omitempty"`
 }
 
 type geminiResponse struct {
 	Candidates []struct {
 		Content struct {
+			Role  string `json:"role"`
 			Parts []struct {
-				Text string `json:"text"`
+				Text         string        `json:"text"`
+				FunctionCall *FunctionCall `json:"functionCall,omitempty"`
 			} `json:"parts"`
 		} `json:"content"`
 	} `json:"candidates"`
@@ -107,23 +114,19 @@ func (c *Client) GenerateText(ctx context.Context, prompt string) (string, error
 		return "", ErrEmptyPrompt
 	}
 
-	payload := geminiPayload{
+	req := ChatRequest{
 		Contents: []Content{
 			{
-				Parts: []Part{
-					{Text: prompt},
-				},
+				Role:  "user",
+				Parts: []Part{{Text: prompt}},
 			},
 		},
 	}
-	if c.cfg.Temperature != nil || c.cfg.MaxOutputTokens > 0 {
-		payload.GenerationConfig = &GenerationConfig{
-			Temperature:     c.cfg.Temperature,
-			MaxOutputTokens: c.cfg.MaxOutputTokens,
-		}
+	resp, err := c.Chat(ctx, req)
+	if err != nil {
+		return "", err
 	}
-
-	return c.executeWithFallback(ctx, payload)
+	return resp.Text, nil
 }
 
 // GenerateWithVision sends a text prompt along with raw image bytes (JPEG, PNG, WebP) to Gemini Vision.
@@ -140,9 +143,10 @@ func (c *Client) GenerateWithVision(ctx context.Context, prompt string, imgBytes
 
 	b64Image := base64.StdEncoding.EncodeToString(imgBytes)
 
-	payload := geminiPayload{
+	req := ChatRequest{
 		Contents: []Content{
 			{
+				Role: "user",
 				Parts: []Part{
 					{Text: prompt},
 					{
@@ -155,8 +159,50 @@ func (c *Client) GenerateWithVision(ctx context.Context, prompt string, imgBytes
 			},
 		},
 	}
+	resp, err := c.Chat(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Text, nil
+}
 
-	return c.executeWithFallback(ctx, payload)
+// Chat executes a structured or tool-augmented chat request through key rotation and model fallback.
+func (c *Client) Chat(ctx context.Context, req ChatRequest) (*ChatResponse, error) {
+	if len(req.Contents) == 0 {
+		return nil, ErrEmptyPrompt
+	}
+
+	payload := geminiPayload{
+		Contents: req.Contents,
+	}
+
+	if req.SystemInstruction != "" {
+		payload.SystemInstruction = &SystemInstruction{
+			Parts: []Part{{Text: req.SystemInstruction}},
+		}
+	}
+
+	if len(req.Tools) > 0 {
+		payload.Tools = req.Tools
+	}
+
+	temp := req.Temperature
+	if temp == nil {
+		temp = c.cfg.Temperature
+	}
+	maxTokens := req.MaxOutputTokens
+	if maxTokens <= 0 {
+		maxTokens = c.cfg.MaxOutputTokens
+	}
+
+	if temp != nil || maxTokens > 0 {
+		payload.GenerationConfig = &GenerationConfig{
+			Temperature:     temp,
+			MaxOutputTokens: maxTokens,
+		}
+	}
+
+	return c.executeChatWithFallback(ctx, payload)
 }
 
 // GenerateJSON executes a prompt and automatically deserializes the output into dest.
@@ -187,23 +233,22 @@ func ExtractJSON(input string) string {
 	return input
 }
 
-func (c *Client) executeWithFallback(ctx context.Context, payload geminiPayload) (string, error) {
+func (c *Client) executeChatWithFallback(ctx context.Context, payload geminiPayload) (*ChatResponse, error) {
 	bodyBytes, err := json.Marshal(payload)
 	if err != nil {
-		return "", fmt.Errorf("go-gemini: marshal payload: %w", err)
+		return nil, fmt.Errorf("go-gemini: marshal payload: %w", err)
 	}
 
 	var lastErr error
 
 	// Try each model in fallback order
 	for _, model := range c.models {
-		// Try up to count of API keys
 		key, keyErr := c.rotator.GetKey()
 		if keyErr != nil {
-			return "", keyErr
+			return nil, keyErr
 		}
 
-		result, err := c.doPost(ctx, model, key, bodyBytes)
+		result, err := c.doPostChat(ctx, model, key, bodyBytes)
 		if err == nil {
 			return result, nil
 		}
@@ -217,43 +262,58 @@ func (c *Client) executeWithFallback(ctx context.Context, payload geminiPayload)
 	}
 
 	if lastErr != nil {
-		return "", fmt.Errorf("%w: %v", ErrModelFailed, lastErr)
+		return nil, fmt.Errorf("%w: %v", ErrModelFailed, lastErr)
 	}
-	return "", ErrModelFailed
+	return nil, ErrModelFailed
 }
 
-func (c *Client) doPost(ctx context.Context, model, key string, body []byte) (string, error) {
+func (c *Client) doPostChat(ctx context.Context, model, key string, body []byte) (*ChatResponse, error) {
 	endpoint := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", model, key)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
 	if err != nil {
-		return "", fmt.Errorf("go-gemini: create request: %w", err)
+		return nil, fmt.Errorf("go-gemini: create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("go-gemini: request failed: %w", err)
+		return nil, fmt.Errorf("go-gemini: request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("go-gemini: read response: %w", err)
+		return nil, fmt.Errorf("go-gemini: read response: %w", err)
 	}
 
 	var geminiResp geminiResponse
 	if err := json.Unmarshal(respBytes, &geminiResp); err != nil {
-		return "", fmt.Errorf("go-gemini: unmarshal response: %w (status %d)", err, resp.StatusCode)
+		return nil, fmt.Errorf("go-gemini: unmarshal response: %w (status %d)", err, resp.StatusCode)
 	}
 
 	if geminiResp.Error != nil {
-		return "", fmt.Errorf("gemini api error (status %d %s): %s", geminiResp.Error.Code, geminiResp.Error.Status, geminiResp.Error.Message)
+		return nil, fmt.Errorf("gemini api error (status %d %s): %s", geminiResp.Error.Code, geminiResp.Error.Status, geminiResp.Error.Message)
 	}
 
 	if len(geminiResp.Candidates) == 0 || len(geminiResp.Candidates[0].Content.Parts) == 0 {
-		return "", fmt.Errorf("go-gemini: empty candidate response from model %s", model)
+		return nil, fmt.Errorf("go-gemini: empty candidate response from model %s", model)
 	}
 
-	return geminiResp.Candidates[0].Content.Parts[0].Text, nil
+	var texts []string
+	var funcCalls []FunctionCall
+
+	for _, part := range geminiResp.Candidates[0].Content.Parts {
+		if strings.TrimSpace(part.Text) != "" {
+			texts = append(texts, part.Text)
+		}
+		if part.FunctionCall != nil && part.FunctionCall.Name != "" {
+			funcCalls = append(funcCalls, *part.FunctionCall)
+		}
+	}
+
+	return &ChatResponse{
+		Text:          strings.Join(texts, "\n"),
+		FunctionCalls: funcCalls,
+	}, nil
 }
