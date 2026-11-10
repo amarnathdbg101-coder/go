@@ -1,7 +1,7 @@
 # libkit 🧰
 
 > **Unified Go Library Package Manager & Clean Architecture Scaffolder (Go 1.23+).**  
-> `C:\Library` me build kiye gaye sabhi **125 high-performance, zero-dependency Go libraries** ko explore, search, test, inject aur scaffold karne ke liye dedicated CLI tool.
+> `C:\Library` me build kiye gaye sabhi **179 high-performance, zero-dependency Go libraries** ko explore, search, test, inject aur scaffold karne ke liye dedicated CLI tool.
 
 ---
 

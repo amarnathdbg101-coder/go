@@ -1,16 +1,22 @@
 go 1.26.5
 
 use (
+	./go-adaptivelimit
 	./go-adaptivepool
 	./go-atomic
 	./go-auditlog
 	./go-authkit
 	./go-batcher
 	./go-bitmap
+	./go-bitmapindex
 	./go-bizhours
 	./go-bloom
+	./go-bm25
+	./go-btree
+	./go-bulkhead
 	./go-bytespool
 	./go-cachekit
+	./go-chaos
 	./go-checksum
 	./go-chromedp-pdfkit
 	./go-circuitbreaker
@@ -25,16 +31,23 @@ use (
 	./go-cookie
 	./go-cors
 	./go-countingbloom
+	./go-crdt
 	./go-cron
 	./go-crypto
 	./go-csvkit
+	./go-cuckoofilter
 	./go-dag
+	./go-dataloader
 	./go-dbbackup
+	./go-deadlock
 	./go-debounce
 	./go-dedup
 	./go-deepclone
+	./go-delayqueue
 	./go-di
 	./go-diff
+	./go-disruptor
+	./go-distlock
 	./go-env
 	./go-envconfig
 	./go-envvalidator
@@ -42,6 +55,7 @@ use (
 	./go-etag
 	./go-eventemitter
 	./go-events
+	./go-eventstore
 	./go-exponentialbackoff
 	./go-expr
 	./go-featureflag
@@ -49,13 +63,18 @@ use (
 	./go-fuzzy
 	./go-gemini
 	./go-geodistance
+	./go-geofence
 	./go-geohash
 	./go-gopdf-pdfkit
 	./go-hashring
 	./go-healthcheck
+	./go-heavyhitters
 	./go-hinglish
+	./go-hotconfig
+	./go-hpack
 	./go-httpclient
 	./go-humanize
+	./go-hyperloglog
 	./go-idempotency
 	./go-idgen
 	./go-image-filekit
@@ -72,13 +91,16 @@ use (
 	./go-lfu
 	./go-locks
 	./go-lru
+	./go-lsmtree
 	./go-mask
+	./go-merkle
 	./go-metrics
 	./go-migrator
 	./go-mimekit
 	./go-mockdb
 	./go-money
 	./go-multierror
+	./go-mvcc
 	./go-netkit
 	./go-orderedmap
 	./go-otp
@@ -87,19 +109,25 @@ use (
 	./go-parchi
 	./go-password
 	./go-pathkit
+	./go-pgexplain
 	./go-phone
 	./go-pipeline
 	./go-pool
+	./go-pricing
 	./go-priorityqueue
 	./go-pubsub
 	./go-queryfilter
+	./go-radix
+	./go-raft
 	./go-ratelimit
+	./go-rbtree
 	./go-reservation
 	./go-resilience
 	./go-retailtaxo
 	./go-retry
 	./go-retryablehttp
 	./go-ringbuffer
+	./go-roaring
 	./go-safecast
 	./go-saferegex
 	./go-saga
@@ -108,7 +136,9 @@ use (
 	./go-secureid
 	./go-semaphore
 	./go-set
+	./go-shadow
 	./go-shutdown
+	./go-simhash
 	./go-slicekit
 	./go-slidingstats
 	./go-slidingwindow
@@ -117,18 +147,23 @@ use (
 	./go-sqlbuilder
 	./go-sqlscan
 	./go-sse
+	./go-sstable
 	./go-stopwatch
 	./go-strcase
 	./go-stream
 	./go-studiocomp
+	./go-supervisor
 	./go-syncchan
 	./go-syncmap
 	./go-sysinfo
 	./go-table
 	./go-tamperseal
 	./go-taskqueue
+	./go-tdigest
 	./go-templatekit
 	./go-timingwheel
+	./go-tinylfu
+	./go-trafficshaper
 	./go-tree
 	./go-units
 	./go-urlquery
@@ -136,9 +171,13 @@ use (
 	./go-useragent
 	./go-validator
 	./go-valrules
+	./go-vectorindex
 	./go-version
+	./go-w3ctrace
+	./go-wal
 	./go-webhook
 	./go-wildcard
+	./go-window
 	./go-workerpool
 	./go-wshub
 	./libkit
