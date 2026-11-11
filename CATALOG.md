@@ -25,14 +25,14 @@ To keep every Go service lightweight while maintaining instant access to common 
 Related packages share a Go module while retaining focused package APIs. Install the module root, then import the desired subpackage:
 
 ```powershell
-go get github.com/amarnathdbg101-coder/go/go-env@v1.0.0
-go get github.com/amarnathdbg101-coder/go/go-cachekit@v1.0.0
+go get github.com/amarnathdbg101-coder/go/go-env@v1.1.0
+go get github.com/amarnathdbg101-coder/go/go-cachekit@v1.1.0
 ```
 
 For example, configuration packages import as `github.com/amarnathdbg101-coder/go/go-env/envconfig`,
 `github.com/amarnathdbg101-coder/go/go-env/envvalidator`, and
 `github.com/amarnathdbg101-coder/go/go-env/hotconfig`. Git tags use the module root
-(for example `go-env/v1.0.0`), not a subpackage name.
+(for example `go-env/v1.1.0`), not a subpackage name.
 These paths are available remotely only after the updated commit and matching module-root tags are published; existing published tags are immutable.
 
 ## 🏛️ Comprehensive Library Matrix

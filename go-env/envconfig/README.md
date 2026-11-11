@@ -1,6 +1,6 @@
 # go-env/envconfig ⚙️
 
-> This focused package is part of the `go-env` module. Import it from `github.com/amarnathdbg101-coder/go/go-env/envconfig`; install the module with `go get github.com/amarnathdbg101-coder/go/go-env@v1.0.0`.
+> This focused package is part of the `go-env` module. Import it from `github.com/amarnathdbg101-coder/go/go-env/envconfig`; install the module with `go get github.com/amarnathdbg101-coder/go/go-env@v1.1.0`.
 
 `go-env/envconfig` ek lightweight, zero-dependency environment variable unmarshaler hai Go structures ke liye. Ye 12-Factor App design pattern ko follow karta hai aur environment variables ko strongly-typed structs me safely parse karta hai using declarative struct tags.
 
@@ -22,7 +22,7 @@
 
 ### Installation
 ```bash
-go get github.com/amarnathdbg101-coder/go/go-env@v1.0.0
+go get github.com/amarnathdbg101-coder/go/go-env@v1.1.0
 ```
 
 ### Complete Example

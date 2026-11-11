@@ -8,10 +8,10 @@
 ## 📦 Sub-packages
 
 - `github.com/amarnathdbg101-coder/go/go-authkit/securityauth`: Complete Authentication Engine & UserStore
-- `github.com/shopsilo/go-security/jwt`: HS256 Token Signing & Claims Verification
-- `github.com/shopsilo/go-security/otp`: TOTP, HOTP, and Crypto 6-digit OTP engine
-- `github.com/shopsilo/go-security/crypto`: AES-256-GCM, HMAC, PBKDF2, UUIDv7
-- `github.com/shopsilo/go-security/mask`: PII Data Redactor & Masker
+- `github.com/amarnathdbg101-coder/go/go-security/jwt`: HS256 Token Signing & Claims Verification
+- `github.com/amarnathdbg101-coder/go/go-security/otp`: TOTP, HOTP, and Crypto 6-digit OTP engine
+- `github.com/amarnathdbg101-coder/go/go-security/crypto`: AES-256-GCM, HMAC, PBKDF2, UUIDv7
+- `github.com/amarnathdbg101-coder/go/go-security/mask`: PII Data Redactor & Masker
 
 ---
 

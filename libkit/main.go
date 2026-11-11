@@ -58,7 +58,7 @@ COMMANDS:
   test [name|--all]    Run tests for a library or all discovered Go modules
   add <name> [--to .]  Inject a library into a target Go project's go.mod
   new <project-name>   Scaffold a new Clean Architecture project using this workspace
-  tag                  Create Git tags (e.g. go-env/v1.0.0) for cataloged modules
+  tag                  Create v1.1.0 tags for consolidated module roots
   verify               Deep scan all directories and verify 100% test pass rate
   version              Show libkit CLI version
 
@@ -150,7 +150,7 @@ func cmdInfo() {
 	fullModule := fmt.Sprintf("github.com/amarnathdbg101-coder/go/%s", item.Module)
 	fmt.Printf("🌐 Remote Module: %s\n", colorize(bold+green, fullModule))
 	fmt.Printf("📦 Package Path:  %s\n", colorize(dim, item.ImportPath))
-	fmt.Printf("📥 Remote Fetch:  %s\n", colorize(cyan, "go get "+fullModule+"@v1.0.0"))
+	fmt.Printf("📥 Remote Fetch:  %s\n", colorize(cyan, "go get "+fullModule+"@latest"))
 	fmt.Printf("📁 Location:      %s\n", colorize(dim, item.Path))
 	fmt.Printf("📝 Description:   %s\n", item.Description)
 	fmt.Printf("⚡ Dependencies:  %s\n\n", colorize(green, item.StdLib))
@@ -315,7 +315,7 @@ func cmdAdd() {
 
 	printSuccess(fmt.Sprintf("Successfully injected %s into %s/go.mod", colorize(bold+green, fullModule), targetDir))
 	printInfo(fmt.Sprintf("Import with: import \"%s\"", fullImportPath))
-	printInfo(fmt.Sprintf("Or remote install: go get %s@v1.0.0", fullModule))
+	printInfo(fmt.Sprintf("Or remote install: go get %s@latest", fullModule))
 }
 
 func cmdTags() {
@@ -333,18 +333,20 @@ func cmdTags() {
 
 	modules := make(map[string]struct{})
 	for _, item := range items {
-		modules[item.Module] = struct{}{}
+		if item.Name != item.Module {
+			modules[item.Module] = struct{}{}
+		}
 	}
-	printInfo(fmt.Sprintf("Generating module Git Tags (v1.0.0) across %d modules...", len(modules)))
+	printInfo(fmt.Sprintf("Generating consolidated module Git Tags (v1.1.0) across %d modules...", len(modules)))
 
 	created := 0
-	seen := make(map[string]struct{})
-	for _, it := range items {
-		if _, ok := seen[it.Module]; ok {
-			continue
-		}
-		seen[it.Module] = struct{}{}
-		tagName := fmt.Sprintf("%s/v1.0.0", it.Module)
+	moduleNames := make([]string, 0, len(modules))
+	for module := range modules {
+		moduleNames = append(moduleNames, module)
+	}
+	sort.Strings(moduleNames)
+	for _, module := range moduleNames {
+		tagName := fmt.Sprintf("%s/v1.1.0", module)
 		// Check if tag already exists
 		checkCmd := exec.Command("git", "tag", "-l", tagName)
 		checkCmd.Dir = rootDir
@@ -366,7 +368,7 @@ func cmdTags() {
 	fmt.Println(colorize(bold+cyan, "  git push origin --tags"))
 	fmt.Println()
 	printInfo("After pushing, anyone can install via:")
-	fmt.Println(colorize(bold+green, "  go get github.com/amarnathdbg101-coder/go/<module-name>@v1.0.0"))
+	fmt.Println(colorize(bold+green, "  go get github.com/amarnathdbg101-coder/go/<module-name>@v1.1.0"))
 }
 
 func cmdNew() {

@@ -21,7 +21,7 @@ High-performance, zero-dependency geospatial calculation toolkit for Go. Fast Ha
 ## Installation
 
 ```bash
-go get github.com/amarnathdbg101-coder/go/go-geodistance@v1.0.0
+go get github.com/amarnathdbg101-coder/go/go-geodistance@v1.1.0
 ```
 
 ---

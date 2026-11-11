@@ -20,7 +20,7 @@ Pure Go e-commerce product studio compositor, adaptive boundary background cutou
 ## Installation
 
 ```bash
-go get github.com/amarnathdbg101-coder/go/go-image-filekit/imagefx@v1.0.0
+go get github.com/amarnathdbg101-coder/go/go-image-filekit@v1.1.0
 ```
 
 ---

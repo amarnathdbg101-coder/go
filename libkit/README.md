@@ -117,7 +117,7 @@ C:\Library\bin\libkit.exe add go-validator/valrules
 ```
 Ye command local development ke liye `go.mod` me `replace` directive add karta hai. Aisa `go.mod` dusre machine par tabhi chalega jab library same path par ho. Shareable project ke liye local `replace` hata kar published module version use karein:
 ```powershell
-go get github.com/amarnathdbg101-coder/go/go-validator@v1.0.0
+go get github.com/amarnathdbg101-coder/go/go-validator@v1.1.0
 ```
 
 ---

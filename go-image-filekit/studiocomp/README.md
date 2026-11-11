@@ -25,7 +25,7 @@ Transforms raw AI cutout masks or product photos into studio-grade catalog asset
 
 ## Installation
 ```bash
-go get github.com/amarnathdbg101-coder/go/go-image-filekit/studiocomp@v1.0.0
+go get github.com/amarnathdbg101-coder/go/go-image-filekit@v1.1.0
 ```
 
 ---
