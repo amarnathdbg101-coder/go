@@ -52,13 +52,13 @@ func printUsage() {
   libkit <command> [arguments...]
 
 COMMANDS:
-  list                 List all 125 cataloged libraries in C:\Library
+  list                 List all libraries in the catalog
   search <query>       Search libraries by name, tag, or description
   info <name|id>       Display library SPEC, exported APIs, and README quickstart
-  test [name|--all]    Run unit tests for a specific library or all 125 libraries
+  test [name|--all]    Run tests for a library or all discovered Go modules
   add <name> [--to .]  Inject a library into a target Go project's go.mod
-  new <project-name>   Scaffold a new Clean Architecture project powered by C:\Library
-  tag                  Create Git tags (e.g. <name>/v1.0.0) for all monorepo libraries
+  new <project-name>   Scaffold a new Clean Architecture project using this workspace
+  tag                  Create Git tags (e.g. go-env/v1.0.0) for cataloged modules
   verify               Deep scan all directories and verify 100% test pass rate
   version              Show libkit CLI version
 
@@ -147,8 +147,9 @@ func cmdInfo() {
 
 	fmt.Println()
 	fmt.Printf("📦 %s (ID: #%03d)\n", colorize(bold+brightCyan, item.Name), item.ID)
-	fullModule := fmt.Sprintf("github.com/amarnathdbg101-coder/go/%s", item.Name)
+	fullModule := fmt.Sprintf("github.com/amarnathdbg101-coder/go/%s", item.Module)
 	fmt.Printf("🌐 Remote Module: %s\n", colorize(bold+green, fullModule))
+	fmt.Printf("📦 Package Path:  %s\n", colorize(dim, item.ImportPath))
 	fmt.Printf("📥 Remote Fetch:  %s\n", colorize(cyan, "go get "+fullModule+"@v1.0.0"))
 	fmt.Printf("📁 Location:      %s\n", colorize(dim, item.Path))
 	fmt.Printf("📝 Description:   %s\n", item.Description)
@@ -177,7 +178,7 @@ func cmdTest() {
 
 	rootDir := FindLibraryRoot()
 	if rootDir == "" {
-		printError("C:\\Library root directory not found")
+		printError("Library workspace not found; run from the workspace or set LIBKIT_ROOT")
 		return
 	}
 
@@ -199,7 +200,7 @@ func cmdTest() {
 func cmdVerify() {
 	rootDir := FindLibraryRoot()
 	if rootDir == "" {
-		printError("C:\\Library root directory not found")
+		printError("Library workspace not found; run from the workspace or set LIBKIT_ROOT")
 		return
 	}
 
@@ -297,12 +298,13 @@ func cmdAdd() {
 		return
 	}
 
-	fullModule := fmt.Sprintf("github.com/amarnathdbg101-coder/go/%s", item.Name)
+	fullModule := fmt.Sprintf("github.com/amarnathdbg101-coder/go/%s", item.Module)
+	fullImportPath := item.ImportPath
 
 	// Add replace directive via `go mod edit`
 	modEditCmd := exec.Command("go", "mod", "edit",
 		"-require", fmt.Sprintf("%s@v0.0.0", fullModule),
-		"-replace", fmt.Sprintf("%s=%s", fullModule, filepath.ToSlash(item.Path)),
+		"-replace", fmt.Sprintf("%s=%s", fullModule, filepath.ToSlash(item.ModuleDir)),
 	)
 	modEditCmd.Dir = targetDir
 	out, err := modEditCmd.CombinedOutput()
@@ -312,14 +314,14 @@ func cmdAdd() {
 	}
 
 	printSuccess(fmt.Sprintf("Successfully injected %s into %s/go.mod", colorize(bold+green, fullModule), targetDir))
-	printInfo(fmt.Sprintf("Import with: import \"%s\"", fullModule))
+	printInfo(fmt.Sprintf("Import with: import \"%s\"", fullImportPath))
 	printInfo(fmt.Sprintf("Or remote install: go get %s@v1.0.0", fullModule))
 }
 
 func cmdTags() {
 	rootDir := FindLibraryRoot()
 	if rootDir == "" {
-		printError("Cannot locate C:\\Library root")
+		printError("Library workspace not found; run from the workspace or set LIBKIT_ROOT")
 		return
 	}
 
@@ -329,11 +331,20 @@ func cmdTags() {
 		return
 	}
 
-	printInfo(fmt.Sprintf("Generating Monorepo Git Tags (v1.0.0) across %d libraries...", len(items)))
+	modules := make(map[string]struct{})
+	for _, item := range items {
+		modules[item.Module] = struct{}{}
+	}
+	printInfo(fmt.Sprintf("Generating module Git Tags (v1.0.0) across %d modules...", len(modules)))
 
 	created := 0
+	seen := make(map[string]struct{})
 	for _, it := range items {
-		tagName := fmt.Sprintf("%s/v1.0.0", it.Name)
+		if _, ok := seen[it.Module]; ok {
+			continue
+		}
+		seen[it.Module] = struct{}{}
+		tagName := fmt.Sprintf("%s/v1.0.0", it.Module)
 		// Check if tag already exists
 		checkCmd := exec.Command("git", "tag", "-l", tagName)
 		checkCmd.Dir = rootDir
@@ -355,7 +366,7 @@ func cmdTags() {
 	fmt.Println(colorize(bold+cyan, "  git push origin --tags"))
 	fmt.Println()
 	printInfo("After pushing, anyone can install via:")
-	fmt.Println(colorize(bold+green, "  go get github.com/amarnathdbg101-coder/go/<lib-name>@v1.0.0"))
+	fmt.Println(colorize(bold+green, "  go get github.com/amarnathdbg101-coder/go/<module-name>@v1.0.0"))
 }
 
 func cmdNew() {

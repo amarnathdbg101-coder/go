@@ -24,7 +24,7 @@
 4. **Clean Architecture Project Scaffolder**:
    - Subcommand `new <project-name>`: Generates a complete, idiomatic Clean Architecture Go backend project ready to run with zero setup:
      - `cmd/server/main.go`: HTTP server bootstrap with phased graceful shutdown via `go-shutdown` and structured ANSI logging via `go-colorlog`.
-     - `config/config.go`: Startup environment schema validation via `go-envvalidator` with type-safe getters (`PORT`, `DATABASE_URL`, `ENV`, `TIMEOUT`).
+     - `config/config.go`: Startup environment schema validation via `go-env/envvalidator` with type-safe getters (`PORT`, `DATABASE_URL`, `ENV`, `TIMEOUT`).
      - `internal/handler/`: REST HTTP route handlers with JSON serialization.
      - `internal/service/`: Business domain logic contracts and services.
      - `internal/repository/`: Data persistence layer contracts and database implementations.

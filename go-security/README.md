@@ -7,7 +7,7 @@
 
 ## 📦 Sub-packages
 
-- `github.com/shopsilo/go-security/auth`: Complete Authentication Engine & UserStore
+- `github.com/amarnathdbg101-coder/go/go-authkit/securityauth`: Complete Authentication Engine & UserStore
 - `github.com/shopsilo/go-security/jwt`: HS256 Token Signing & Claims Verification
 - `github.com/shopsilo/go-security/otp`: TOTP, HOTP, and Crypto 6-digit OTP engine
 - `github.com/shopsilo/go-security/crypto`: AES-256-GCM, HMAC, PBKDF2, UUIDv7
@@ -25,7 +25,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/shopsilo/go-security/auth"
+	"github.com/amarnathdbg101-coder/go/go-authkit/securityauth"
 )
 
 func main() {

@@ -1,24 +1,25 @@
 # libkit 🧰
 
-> **Unified Go Library Package Manager & Clean Architecture Scaffolder (Go 1.23+).**  
-> `C:\Library` me build kiye gaye sabhi **179 high-performance, zero-dependency Go libraries** ko explore, search, test, inject aur scaffold karne ke liye dedicated CLI tool.
+> **Unified Go Library Catalog & Clean Architecture Scaffolder.**
+>
+> `C:\Library` workspace ke cataloged Go libraries ko explore, search, test, local development ke liye inject, aur scaffold karne ka CLI tool.
 
 ---
 
 ## 🚀 Key Features
 
 1. **Catalog Explorer (`list`)**:
-   - `C:\Library` ke sabhi 125 libraries ko ANSI colored terminal table me print karta hai.
+   - `CATALOG.md` me listed libraries ko ANSI colored terminal table me print karta hai.
 2. **Instant Search (`search <query>`)**:
    - Kisi bhi keyword (jaise `jwt`, `circuit`, `ratelimit`, `cache`, `sql`, `bloom`, `pool`) se libraries filter karta hai.
 3. **Deep Info & Quickstart (`info <name|id>`)**:
    - Target library ki puri summary, `SPEC.md` architecture contract, aur `README.md` quickstart demo seedhe terminal me print karta hai.
 4. **Test & Verify (`test [name|--all]`, `verify`)**:
-   - Specific library ya fir sabhi 125 libraries ke unit tests run karke verification report deta hai.
+   - Ek library ya workspace me mile sabhi Go modules ke tests run karke verification report deta hai.
 5. **Dependency Injection (`add <name>`)**:
    - Kisi bhi existing Go project me seedhe `go mod edit` run karke local `replace` directive aur `require` inject kar deta hai.
 6. **Clean Architecture Scaffolder (`new <project-name>`)**:
-   - Ek command se complete production-ready Clean Architecture microservice scaffold karta hai (`cmd/server`, `config`, `internal/handler`, `service`, `repository`) jisme Graceful Shutdown (`go-shutdown`), Startup Config Validation (`go-envvalidator`), aur Structured Logging (`go-colorlog`) pre-configured hote hain.
+   - Ek command se complete production-ready Clean Architecture microservice scaffold karta hai (`cmd/server`, `config`, `internal/handler`, `service`, `repository`) jisme Graceful Shutdown (`go-shutdown`), Startup Config Validation (`go-env/envvalidator`), aur Structured Logging (`go-colorlog`) pre-configured hote hain.
 7. **100% Go Standard Library**:
    - Zero external dependencies! Pure Go code.
 
@@ -26,15 +27,25 @@
 
 ## 📦 Installation & Binary
 
-Binary location:
+Workspace ke `go.work` me declared Go toolchain use karke CLI build karein (currently Go 1.26.5):
 ```powershell
-C:\Library\bin\libkit.exe
+New-Item -ItemType Directory -Force C:\Library\bin
+Set-Location C:\Library\libkit
+go build -o C:\Library\bin\libkit.exe .
 ```
 
-CLI ko system PATH me add karne ke liye (PowerShell):
+CLI ko current PowerShell session ke `PATH` me add karne ke liye:
 ```powershell
 $env:Path += ";C:\Library\bin"
+libkit.exe list
 ```
+
+Binary `bin` folder me rahe to workspace root automatically mil jata hai. Workspace ko move karne ya binary ko bahar rakhne par `LIBKIT_ROOT` set karein:
+```powershell
+$env:LIBKIT_ROOT = "D:\path\to\Library"
+```
+
+Is setting ko permanent banana ho to Windows **Environment Variables** settings me user-level `LIBKIT_ROOT` aur `PATH` add karein.
 
 ---
 
@@ -69,11 +80,13 @@ C:\Library\bin\libkit.exe info 116
 ### 4. Run Unit Tests
 ```powershell
 # Test single library
-C:\Library\bin\libkit.exe test go-valrules
+C:\Library\bin\libkit.exe test go-validator/valrules
 
-# Run full batch test suite across all 125 libraries
+# Run tests for every Go module discovered in the workspace
 C:\Library\bin\libkit.exe test --all
 ```
+
+`C:\Library` ek Go workspace hai, single Go module nahi. Isliye repository root par `go test ./...` chalane ke bajay, kisi module folder se test karein ya `libkit test --all` use karein.
 
 ### 5. Scaffold a New Clean Architecture Backend
 ```powershell
@@ -100,9 +113,12 @@ curl http://localhost:8080/health
 ### 6. Inject Library into Existing Project
 ```powershell
 cd my-ecommerce-api
-C:\Library\bin\libkit.exe add go-valrules
+C:\Library\bin\libkit.exe add go-validator/valrules
 ```
-Result: `go-valrules` will be added to your `go.mod` with local replace directive to `C:/Library/go-valrules`!
+Ye command local development ke liye `go.mod` me `replace` directive add karta hai. Aisa `go.mod` dusre machine par tabhi chalega jab library same path par ho. Shareable project ke liye local `replace` hata kar published module version use karein:
+```powershell
+go get github.com/amarnathdbg101-coder/go/go-validator@v1.0.0
+```
 
 ---
 

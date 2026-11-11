@@ -12,7 +12,7 @@ import (
 func ScaffoldProject(targetDir, projectName string) error {
 	rootDir := FindLibraryRoot()
 	if rootDir == "" {
-		rootDir = `C:\Library`
+		return fmt.Errorf("could not locate library workspace; run from the workspace or set LIBKIT_ROOT")
 	}
 
 	var projectPath string
@@ -23,6 +23,14 @@ func ScaffoldProject(targetDir, projectName string) error {
 	} else {
 		projectPath = filepath.Join(targetDir, projectName)
 		moduleName = projectName
+	}
+
+	if entries, err := os.ReadDir(projectPath); err == nil {
+		if len(entries) > 0 {
+			return fmt.Errorf("target directory is not empty: %s", projectPath)
+		}
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("inspect target directory: %w", err)
 	}
 
 	if err := os.MkdirAll(projectPath, 0755); err != nil {
@@ -50,14 +58,14 @@ go 1.23
 
 require (
 	github.com/amarnathdbg101-coder/go/go-colorlog v0.0.0
-	github.com/amarnathdbg101-coder/go/go-envvalidator v0.0.0
+	github.com/amarnathdbg101-coder/go/go-env v0.0.0
 	github.com/amarnathdbg101-coder/go/go-shutdown v0.0.0
 	github.com/amarnathdbg101-coder/go/go-sqlscan v0.0.0
 )
 
 replace (
 	github.com/amarnathdbg101-coder/go/go-colorlog => %s/go-colorlog
-	github.com/amarnathdbg101-coder/go/go-envvalidator => %s/go-envvalidator
+	github.com/amarnathdbg101-coder/go/go-env => %s/go-env
 	github.com/amarnathdbg101-coder/go/go-shutdown => %s/go-shutdown
 	github.com/amarnathdbg101-coder/go/go-sqlscan => %s/go-sqlscan
 )
@@ -76,7 +84,7 @@ replace (
 	configContent := fmt.Sprintf(`package config
 
 import (
-	"github.com/amarnathdbg101-coder/go/go-envvalidator"
+	"github.com/amarnathdbg101-coder/go/go-env/envvalidator"
 	"time"
 )
 
@@ -233,7 +241,9 @@ curl http://localhost:8080/health
 	tidyCmd := exec.Command("go", "mod", "tidy")
 	tidyCmd.Dir = projectPath
 	tidyCmd.Env = append(os.Environ(), "GOWORK=off")
-	_ = tidyCmd.Run()
+	if output, err := tidyCmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("go mod tidy: %w\n%s", err, strings.TrimSpace(string(output)))
+	}
 
 	return nil
 }

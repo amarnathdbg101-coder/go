@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"log"
 	"time"
-	goenv "go-env"
+	goenv "github.com/amarnathdbg101-coder/go/go-env"
 )
 
 func main() {

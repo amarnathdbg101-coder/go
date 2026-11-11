@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"log"
 	"time"
-	gohttp "go-httpclient"
+	gohttp "github.com/amarnathdbg101-coder/go/go-httpclient"
 )
 
 type WeatherResponse struct {

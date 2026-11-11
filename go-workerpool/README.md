@@ -22,7 +22,7 @@ package main
 import (
 	"context"
 	"fmt"
-	goworkerpool "go-workerpool"
+	goworkerpool "github.com/amarnathdbg101-coder/go/go-workerpool"
 )
 
 func main() {

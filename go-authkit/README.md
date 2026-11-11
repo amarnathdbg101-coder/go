@@ -22,7 +22,7 @@
 ## 📦 Installation
 
 ```bash
-go get github.com/shopsilo/go-authkit
+go get github.com/amarnathdbg101-coder/go/go-authkit
 ```
 
 ---
@@ -39,7 +39,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/shopsilo/go-authkit"
+	"github.com/amarnathdbg101-coder/go/go-authkit"
 )
 
 func main() {
@@ -105,7 +105,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/shopsilo/go-authkit"
+	"github.com/amarnathdbg101-coder/go/go-authkit"
 )
 
 func main() {

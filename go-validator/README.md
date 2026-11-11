@@ -19,7 +19,7 @@
 ## 📦 Installation
 
 ```bash
-go get github.com/shopsilo/go-validator
+go get github.com/amarnathdbg101-coder/go/go-validator
 ```
 
 ---
@@ -35,7 +35,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/shopsilo/go-validator"
+	"github.com/amarnathdbg101-coder/go/go-validator"
 )
 
 type RegisterReq struct {

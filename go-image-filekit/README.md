@@ -22,7 +22,7 @@
 ## 📦 Installation
 
 ```bash
-go get github.com/shopsilo/go-image-filekit
+go get github.com/amarnathdbg101-coder/go/go-image-filekit
 ```
 
 ---
@@ -40,7 +40,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	filekit "github.com/shopsilo/go-image-filekit"
+	filekit "github.com/amarnathdbg101-coder/go/go-image-filekit"
 )
 
 func main() {

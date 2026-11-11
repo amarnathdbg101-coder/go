@@ -24,7 +24,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	goevents "go-events"
+	goevents "github.com/amarnathdbg101-coder/go/go-events"
 )
 
 type OrderCreatedPayload struct {

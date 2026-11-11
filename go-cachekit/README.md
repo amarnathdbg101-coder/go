@@ -21,7 +21,7 @@
 ## 📦 Installation
 
 ```bash
-go get github.com/shopsilo/go-cachekit
+go get github.com/amarnathdbg101-coder/go/go-cachekit
 ```
 
 ---
@@ -40,7 +40,7 @@ import (
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/shopsilo/go-cachekit"
+	"github.com/amarnathdbg101-coder/go/go-cachekit"
 )
 
 type Product struct {
@@ -123,7 +123,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/shopsilo/go-cachekit"
+	"github.com/amarnathdbg101-coder/go/go-cachekit"
 )
 
 func setupTwoTierCache(redisStore cachekit.Store) *cachekit.Engine {

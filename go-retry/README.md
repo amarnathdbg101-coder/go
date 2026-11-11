@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"log"
 	"time"
-	goretry "go-retry"
+	goretry "github.com/amarnathdbg101-coder/go/go-retry"
 )
 
 func main() {

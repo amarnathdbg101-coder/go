@@ -32,7 +32,7 @@ In standard HTTP handlers (e.g. User Signup, Order Checkout), sending emails, ca
 ## 📦 Installation
 
 ```bash
-go get github.com/shopsilo/go-taskqueue
+go get github.com/amarnathdbg101-coder/go/go-taskqueue
 ```
 
 ---
@@ -51,7 +51,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/shopsilo/go-taskqueue"
+	"github.com/amarnathdbg101-coder/go/go-taskqueue"
 )
 
 type WelcomeEmailPayload struct {

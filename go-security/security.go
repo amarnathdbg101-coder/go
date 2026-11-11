@@ -1,7 +1,7 @@
 package security
 
 import (
-	"github.com/amarnathdbg101-coder/go/go-security/auth"
+	"github.com/amarnathdbg101-coder/go/go-authkit/securityauth"
 )
 
 const Version = "1.0.0"

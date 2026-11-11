@@ -19,7 +19,7 @@
 ## 📦 Installation
 
 ```bash
-go get github.com/shopsilo/go-paginate
+go get github.com/amarnathdbg101-coder/go/go-paginate
 ```
 
 ---
@@ -35,7 +35,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/shopsilo/go-paginate"
+	"github.com/amarnathdbg101-coder/go/go-paginate"
 )
 
 type Product struct {

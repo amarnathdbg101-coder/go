@@ -1,6 +1,6 @@
 # C:\Library Master Catalog 📚
 
-> **179 Production-Ready, High-Efficiency, Security-Hardened Go Libraries.**  
+> **184 Production-Ready, High-Efficiency, Security-Hardened Go Libraries.**
 > Built strictly adhering to the [Master Architecture Blueprint](BLUEPRINT.md).
 
 ---
@@ -9,16 +9,31 @@
 
 To keep every Go service lightweight while maintaining instant access to common features, libraries are organized into **8 Domain Work Suites**:
 
-1. **🔒 Security, Auth & Identity Suite**: [`go-authkit`](./go-authkit), [`go-jwt`](./go-jwt), [`go-otp`](./go-otp), [`go-crypto`](./go-crypto), [`go-cookie`](./go-cookie), [`go-mask`](./go-mask), [`go-idgen`](./go-idgen), [`go-password`](./go-password), [`go-secguard`](./go-secguard), [`go-keyrotator`](./go-keyrotator), [`go-tamperseal`](./go-tamperseal), [`go-urlsigner`](./go-urlsigner), [`go-secureid`](./go-secureid)
+1. **🔒 Security, Auth & Identity Suite**: [`go-authkit`](./go-authkit), [`go-authkit/securityauth`](./go-authkit/securityauth), [`go-jwt`](./go-jwt), [`go-otp`](./go-otp), [`go-crypto`](./go-crypto), [`go-cookie`](./go-cookie), [`go-mask`](./go-mask), [`go-idgen`](./go-idgen), [`go-password`](./go-password), [`go-secguard`](./go-secguard), [`go-keyrotator`](./go-keyrotator), [`go-tamperseal`](./go-tamperseal), [`go-urlsigner`](./go-urlsigner), [`go-secureid`](./go-secureid)
 2. **🌐 Network, Resilience & Traffic Suite**: [`go-ratelimit`](./go-ratelimit), [`go-httpclient`](./go-httpclient), [`go-circuitbreaker`](./go-circuitbreaker), [`go-retry`](./go-retry), [`go-healthcheck`](./go-healthcheck), [`go-ipkit`](./go-ipkit), [`go-cors`](./go-cors), [`go-webhook`](./go-webhook), [`go-shutdown`](./go-shutdown), [`go-adaptivelimit`](./go-adaptivelimit), [`go-bulkhead`](./go-bulkhead), [`go-wshub`](./go-wshub), [`go-sse`](./go-sse)
-3. **🗄️ Data Caching, SQL & Validation Suite**: [`go-cachekit`](./go-cachekit), [`go-paginate`](./go-paginate), [`go-sqlbuilder`](./go-sqlbuilder), [`go-validator`](./go-validator), [`go-sanitize`](./go-sanitize), [`go-slug`](./go-slug), [`go-env`](./go-env), [`go-sqlscan`](./go-sqlscan), [`go-queryfilter`](./go-queryfilter), [`go-idempotency`](./go-idempotency), [`go-hotconfig`](./go-hotconfig), [`go-jsonpath`](./go-jsonpath)
-4. **⚡ Async Workflows, Workers & Events Suite**: [`go-taskqueue`](./go-taskqueue), [`go-workerpool`](./go-workerpool), [`go-events`](./go-events), [`go-pubsub`](./go-pubsub), [`go-stream`](./go-stream), [`go-pipeline`](./go-pipeline), [`go-cron`](./go-cron), [`go-delayqueue`](./go-delayqueue), [`go-saga`](./go-saga), [`go-disruptor`](./go-disruptor), [`go-adaptivepool`](./go-adaptivepool)
-5. **📄 Documents, Media & Files Suite**: [`go-image-filekit`](./go-image-filekit), [`go-gopdf-pdfkit`](./go-gopdf-pdfkit), [`go-chromedp-pdfkit`](./go-chromedp-pdfkit), [`go-csvkit`](./go-csvkit), [`go-compress`](./go-compress), [`go-mimekit`](./go-mimekit), [`go-imagefx`](./go-imagefx), [`go-studiocomp`](./go-studiocomp), [`go-imghash`](./go-imghash), [`go-jsonstream`](./go-jsonstream)
+3. **🗄️ Data Caching, SQL & Validation Suite**: [`go-cachekit`](./go-cachekit), [`go-cachekit/data`](./go-cachekit/data), [`go-cachekit/data/cache`](./go-cachekit/data/cache), [`go-cachekit/lru`](./go-cachekit/lru), [`go-cachekit/lfu`](./go-cachekit/lfu), [`go-cachekit/tinylfu`](./go-cachekit/tinylfu), [`go-paginate`](./go-paginate), [`go-paginate/queryfilter`](./go-paginate/queryfilter), [`go-sqlbuilder`](./go-sqlbuilder), [`go-validator`](./go-validator), [`go-validator/valrules`](./go-validator/valrules), [`go-sanitize`](./go-sanitize), [`go-slug`](./go-slug), [`go-env`](./go-env), [`go-env/envconfig`](./go-env/envconfig), [`go-env/envvalidator`](./go-env/envvalidator), [`go-env/hotconfig`](./go-env/hotconfig), [`go-sqlscan`](./go-sqlscan), [`go-idempotency`](./go-idempotency), [`go-jsonpath`](./go-jsonpath)
+4. **⚡ Async Workflows, Workers & Events Suite**: [`go-taskqueue`](./go-taskqueue), [`go-taskqueue/async`](./go-taskqueue/async), [`go-taskqueue/async/taskqueue`](./go-taskqueue/async/taskqueue), [`go-workerpool`](./go-workerpool), [`go-workerpool/adaptivepool`](./go-workerpool/adaptivepool), [`go-events`](./go-events), [`go-events/eventemitter`](./go-events/eventemitter), [`go-pubsub`](./go-pubsub), [`go-stream`](./go-stream), [`go-pipeline`](./go-pipeline), [`go-cron`](./go-cron), [`go-delayqueue`](./go-delayqueue), [`go-saga`](./go-saga), [`go-disruptor`](./go-disruptor)
+5. **📄 Documents, Media & Files Suite**: [`go-image-filekit`](./go-image-filekit), [`go-image-filekit/imagefx`](./go-image-filekit/imagefx), [`go-image-filekit/studiocomp`](./go-image-filekit/studiocomp), [`go-image-filekit/mimekit`](./go-image-filekit/mimekit), [`go-gopdf-pdfkit`](./go-gopdf-pdfkit), [`go-chromedp-pdfkit`](./go-chromedp-pdfkit), [`go-csvkit`](./go-csvkit), [`go-compress`](./go-compress), [`go-imghash`](./go-imghash), [`go-jsonstream`](./go-jsonstream)
 6. **📊 Observability, Metrics & Audit Suite**: [`go-auditlog`](./go-auditlog), [`go-metrics`](./go-metrics), [`go-contextkit`](./go-contextkit), [`go-migrator`](./go-migrator), [`go-sysinfo`](./go-sysinfo), [`go-stopwatch`](./go-stopwatch), [`go-colorlog`](./go-colorlog), [`go-w3ctrace`](./go-w3ctrace), [`go-slidingstats`](./go-slidingstats), [`go-pgexplain`](./go-pgexplain)
-7. **🚀 High-Speed Data Structures & Algorithms Suite**: [`go-bloom`](./go-bloom), [`go-locks`](./go-locks), [`go-lru`](./go-lru), [`go-lfu`](./go-lfu), [`go-tinylfu`](./go-tinylfu), [`go-bitmap`](./go-bitmap), [`go-btree`](./go-btree), [`go-radix`](./go-radix), [`go-rbtree`](./go-rbtree), [`go-sortedset`](./go-sortedset), [`go-ringbuffer`](./go-ringbuffer), [`go-concurrentmap`](./go-concurrentmap), [`go-bm25`](./go-bm25), [`go-cuckoofilter`](./go-cuckoofilter)
-8. **🛒 E-Commerce & Retail Business Suite**: [`go-money`](./go-money), [`go-ledger`](./go-ledger), [`go-reservation`](./go-reservation), [`go-retailtaxo`](./go-retailtaxo), [`go-parchi`](./go-parchi), [`go-escpos`](./go-escpos), [`go-pricing`](./go-pricing), [`go-bizhours`](./go-bizhours), [`go-hinglish`](./go-hinglish), [`go-geodistance`](./go-geodistance)
+7. **🚀 High-Speed Data Structures & Algorithms Suite**: [`go-bloom`](./go-bloom), [`go-locks`](./go-locks), [`go-cachekit/lru`](./go-cachekit/lru), [`go-cachekit/lfu`](./go-cachekit/lfu), [`go-cachekit/tinylfu`](./go-cachekit/tinylfu), [`go-bitmap`](./go-bitmap), [`go-btree`](./go-btree), [`go-radix`](./go-radix), [`go-rbtree`](./go-rbtree), [`go-sortedset`](./go-sortedset), [`go-ringbuffer`](./go-ringbuffer), [`go-concurrentmap`](./go-concurrentmap), [`go-bm25`](./go-bm25), [`go-cuckoofilter`](./go-cuckoofilter)
+8. **🛒 E-Commerce & Retail Business Suite**: [`go-money`](./go-money), [`go-ledger`](./go-ledger), [`go-reservation`](./go-reservation), [`go-retailtaxo`](./go-retailtaxo), [`go-parchi`](./go-parchi), [`go-escpos`](./go-escpos), [`go-pricing`](./go-pricing), [`go-bizhours`](./go-bizhours), [`go-hinglish`](./go-hinglish), [`go-geodistance`](./go-geodistance), [`go-geodistance/geohash`](./go-geodistance/geohash), [`go-geodistance/geofence`](./go-geodistance/geofence)
 
 ---
+
+### Consolidated module usage
+
+Related packages share a Go module while retaining focused package APIs. Install the module root, then import the desired subpackage:
+
+```powershell
+go get github.com/amarnathdbg101-coder/go/go-env@v1.0.0
+go get github.com/amarnathdbg101-coder/go/go-cachekit@v1.0.0
+```
+
+For example, configuration packages import as `github.com/amarnathdbg101-coder/go/go-env/envconfig`,
+`github.com/amarnathdbg101-coder/go/go-env/envvalidator`, and
+`github.com/amarnathdbg101-coder/go/go-env/hotconfig`. Git tags use the module root
+(for example `go-env/v1.0.0`), not a subpackage name.
+These paths are available remotely only after the updated commit and matching module-root tags are published; existing published tags are immutable.
 
 ## 🏛️ Comprehensive Library Matrix
 
@@ -75,9 +90,9 @@ To keep every Go service lightweight while maintaining instant access to common 
 | 49 | **`go-tree`** | [`go-tree`](./go-tree) | Generic Prefix Trie Autocomplete & Hierarchical Category Tree | ✅ 100% StdLib | ✅ PASS |
 | 50 | **`go-version`** | [`go-version`](./go-version) | SemVer 2.0.0 Parser, Comparator, Caret/Tilde Range Constraint Matcher | ✅ 100% StdLib | ✅ PASS |
 | 51 | **`go-ringbuffer`** | [`go-ringbuffer`](./go-ringbuffer) | Thread-Safe Generic Circular FIFO Ring Buffer with Overwrite Modes | ✅ 100% StdLib | ✅ PASS |
-| 52 | **`go-geohash`** | [`go-geohash`](./go-geohash) | Geohash Encoding/Decoding, 8-Neighbor Proximity, Haversine Distance | ✅ 100% StdLib | ✅ PASS |
+| 52 | **`go-geodistance/geohash`** | [`go-geodistance/geohash`](./go-geodistance/geohash) | Geohash Encoding/Decoding, 8-Neighbor Proximity, Haversine Distance | ✅ 100% StdLib | ✅ PASS |
 | 53 | **`go-bitmap`** | [`go-bitmap`](./go-bitmap) | Compact Bit Array with Hardware POPCNT and Set Algebra (And/Or/Diff) | ✅ 100% StdLib | ✅ PASS |
-| 54 | **`go-lru`** | [`go-lru`](./go-lru) | O(1) Generic LRU Cache with Per-Item TTL and Eviction Callbacks | ✅ 100% StdLib | ✅ PASS |
+| 54 | **`go-cachekit/lru`** | [`go-cachekit/lru`](./go-cachekit/lru) | O(1) Generic LRU Cache with Per-Item TTL and Eviction Callbacks | ✅ 100% StdLib | ✅ PASS |
 | 55 | **`go-color`** | [`go-color`](./go-color) | ANSI Terminal Styling, 24-Bit RGB/HEX TrueColor, NO_COLOR Compliant | ✅ 100% StdLib | ✅ PASS |
 | 56 | **`go-debounce`** | [`go-debounce`](./go-debounce) | Thread-Safe Debounce & Throttle with Keyed Multi-Tenant Isolation | ✅ 100% StdLib | ✅ PASS |
 | 57 | **`go-priorityqueue`** | [`go-priorityqueue`](./go-priorityqueue) | Generic Binary Heap Priority Queue with Max/Min Heap Support | ✅ 100% StdLib | ✅ PASS |
@@ -90,14 +105,14 @@ To keep every Go service lightweight while maintaining instant access to common 
 | 64 | **`go-keyrotator`** | [`go-keyrotator`](./go-keyrotator) | Zero-Downtime Cryptographic Key Rotation (Active, Retiring, Retired) | ✅ 100% StdLib | ✅ PASS |
 | 65 | **`go-secguard`** | [`go-secguard`](./go-secguard) | OWASP Security Headers, WAF (SQLi/XSS/Traversal), Scanner Trap, IP Jail | ✅ 100% StdLib | ✅ PASS |
 | 66 | **`go-concurrentmap`** | [`go-concurrentmap`](./go-concurrentmap) | 32-Way Striped Concurrent Hash Map with Type-Safe Generics | ✅ 100% StdLib | ✅ PASS |
-| 67 | **`go-exponentialbackoff`** | [`go-exponentialbackoff`](./go-exponentialbackoff) | Mathematical Exponential Backoff & AWS-Recommended Jitter Strategies | ✅ 100% StdLib | ✅ PASS |
+| 67 | **`go-retry/exponentialbackoff`** | [`go-retry/exponentialbackoff`](./go-retry/exponentialbackoff) | Mathematical Exponential Backoff & AWS-Recommended Jitter Strategies | ✅ 100% StdLib | ✅ PASS |
 | 68 | **`go-urlsigner`** | [`go-urlsigner`](./go-urlsigner) | HMAC-SHA256 Presigned Temporary URLs with Tamper Protection | ✅ 100% StdLib | ✅ PASS |
 | 69 | **`go-stopwatch`** | [`go-stopwatch`](./go-stopwatch) | High-Resolution Multi-Lap Execution Profiler & Profiling Summary | ✅ 100% StdLib | ✅ PASS |
 | 70 | **`go-units`** | [`go-units`](./go-units) | Byte Size (SI/IEC) & Extended Duration (Days/Weeks) Parser & Formatter | ✅ 100% StdLib | ✅ PASS |
 | 71 | **`go-wildcard`** | [`go-wildcard`](./go-wildcard) | High-Performance Glob Pattern Matcher (`*`, `?`, character classes `[...]`) | ✅ 100% StdLib | ✅ PASS |
 | 72 | **`go-checksum`** | [`go-checksum`](./go-checksum) | Multi-Algorithm Streaming Checksum (MD5, SHA1, SHA256, SHA512, CRC32) | ✅ 100% StdLib | ✅ PASS |
 | 73 | **`go-templatekit`** | [`go-templatekit`](./go-templatekit) | Ergonomic Template Engine with Filter Pipelines (`{{ var \| filter }}`) | ✅ 100% StdLib | ✅ PASS |
-| 74 | **`go-envconfig`** | [`go-envconfig`](./go-envconfig) | Tag-Driven 12-Factor App Struct Config Unmarshaler & Masked Dumps | ✅ 100% StdLib | ✅ PASS |
+| 74 | **`go-env/envconfig`** | [`go-env/envconfig`](./go-env/envconfig) | Tag-Driven 12-Factor App Struct Config Unmarshaler & Masked Dumps | ✅ 100% StdLib | ✅ PASS |
 | 75 | **`go-dedup`** | [`go-dedup`](./go-dedup) | Sliding-Window In-Memory Event & Webhook Deduplicator with Janitor | ✅ 100% StdLib | ✅ PASS |
 | 76 | **`go-jsonpath`** | [`go-jsonpath`](./go-jsonpath) | High-Performance JSONPath Parser, Slices & Wildcard Projections | ✅ 100% StdLib | ✅ PASS |
 | 77 | **`go-phone`** | [`go-phone`](./go-phone) | E.164 Telephone Parser, Indian 10-Digit Mobile Validator & Masking | ✅ 100% StdLib | ✅ PASS |
@@ -117,7 +132,7 @@ To keep every Go service lightweight while maintaining instant access to common 
 | 91 | **`go-syncmap`** | [`go-syncmap`](./go-syncmap) | Type-Safe Generic Concurrent Map (`sync.Map`) with Atomic Compute | ✅ 100% StdLib | ✅ PASS |
 | 92 | **`go-netkit`** | [`go-netkit`](./go-netkit) | Network Utilities: Free Ports, TCP Reachability, Private IP & CIDRs | ✅ 100% StdLib | ✅ PASS |
 | 93 | **`go-table`** | [`go-table`](./go-table) | ASCII, Markdown & CSV Terminal Table Formatter with Unicode Support | ✅ 100% StdLib | ✅ PASS |
-| 94 | **`go-lfu`** | [`go-lfu`](./go-lfu) | O(1) Least Frequently Used (LFU) Cache with Frequency Lists & TTL | ✅ 100% StdLib | ✅ PASS |
+| 94 | **`go-cachekit/lfu`** | [`go-cachekit/lfu`](./go-cachekit/lfu) | O(1) Least Frequently Used (LFU) Cache with Frequency Lists & TTL | ✅ 100% StdLib | ✅ PASS |
 | 95 | **`go-deepclone`** | [`go-deepclone`](./go-deepclone) | Reflection-Safe Deep Cloning Engine with Cycle-Detection Protection | ✅ 100% StdLib | ✅ PASS |
 | 96 | **`go-sse`** | [`go-sse`](./go-sse) | WHATWG Server-Sent Events (SSE) Real-Time HTTP Push Streaming Engine | ✅ 100% StdLib | ✅ PASS |
 | 97 | **`go-hashring`** | [`go-hashring`](./go-hashring) | Consistent Hash Ring with Virtual Nodes (Ketama) & Replicas | ✅ 100% StdLib | ✅ PASS |
@@ -125,8 +140,8 @@ To keep every Go service lightweight while maintaining instant access to common 
 | 99 | **`go-password`** | [`go-password`](./go-password) | OWASP/NIST Password Validator, Shannon Entropy & CSPRNG Generator | ✅ 100% StdLib | ✅ PASS |
 | 100 | **`go-resilience`** | [`go-resilience`](./go-resilience) | Composable Fault-Tolerance: Retries, Breaker, Bulkhead, Timeout, Fallback | ✅ 100% StdLib | ✅ PASS |
 | 101 | **`go-orderedmap`** | [`go-orderedmap`](./go-orderedmap) | Deterministic Generic Ordered Map with $O(1)$ Operations & JSON Marshalling | ✅ 100% StdLib | ✅ PASS |
-| 102 | **`go-valrules`** | [`go-valrules`](./go-valrules) | Enterprise Validation Rules: Luhn (Cards), Indian GSTIN, PAN, IFSC, E.164, UUID | ✅ 100% StdLib | ✅ PASS |
-| 103 | **`go-retryablehttp`** | [`go-retryablehttp`](./go-retryablehttp) | Resilient HTTP Client with Request Body Rewind, `Retry-After` & Full Jitter | ✅ 100% StdLib | ✅ PASS |
+| 102 | **`go-validator/valrules`** | [`go-validator/valrules`](./go-validator/valrules) | Enterprise Validation Rules: Luhn (Cards), Indian GSTIN, PAN, IFSC, E.164, UUID | ✅ 100% StdLib | ✅ PASS |
+| 103 | **`go-httpclient/retryablehttp`** | [`go-httpclient/retryablehttp`](./go-httpclient/retryablehttp) | Resilient HTTP Client with Request Body Rewind, `Retry-After` & Full Jitter | ✅ 100% StdLib | ✅ PASS |
 | 104 | **`go-bytespool`** | [`go-bytespool`](./go-bytespool) | Tiered Zero-Allocation Buffer Pool (512B-1MB) with Anti-Bloat Discard | ✅ 100% StdLib | ✅ PASS |
 | 105 | **`go-expr`** | [`go-expr`](./go-expr) | Safe In-Memory Formula & Business Rule Expression Evaluator (Arithmetic & Logic) | ✅ 100% StdLib | ✅ PASS |
 | 106 | **`go-colorgrad`** | [`go-colorgrad`](./go-colorgrad) | 24-bit TrueColor Terminal Gradients, RGB Interpolator & Dynamic Progress Bars | ✅ 100% StdLib | ✅ PASS |
@@ -135,18 +150,18 @@ To keep every Go service lightweight while maintaining instant access to common 
 | 109 | **`go-dag`** | [`go-dag`](./go-dag) | Directed Acyclic Graph Task Runner with Kahn's Sort & Bounded Concurrency | ✅ 100% StdLib | ✅ PASS |
 | 110 | **`go-sortedset`** | [`go-sortedset`](./go-sortedset) | Redis-Style In-Memory Sorted Set (ZSET) via SkipList with $O(\log N)$ Ranks | ✅ 100% StdLib | ✅ PASS |
 | 111 | **`go-slidingwindow`** | [`go-slidingwindow`](./go-slidingwindow) | Rolling Time Window Ring Buffer Counter & Rate Limiter ($O(1)$ Increments) | ✅ 100% StdLib | ✅ PASS |
-| 112 | **`go-envvalidator`** | [`go-envvalidator`](./go-envvalidator) | Zero-Reflection Schema-Driven Startup Environment Validator with Aggregated Reports | ✅ 100% StdLib | ✅ PASS |
+| 112 | **`go-env/envvalidator`** | [`go-env/envvalidator`](./go-env/envvalidator) | Zero-Reflection Schema-Driven Startup Environment Validator with Aggregated Reports | ✅ 100% StdLib | ✅ PASS |
 | 113 | **`go-mockdb`** | [`go-mockdb`](./go-mockdb) | Lightweight In-Memory SQL Driver Mock for Unit Testing Repositories | ✅ 100% StdLib | ✅ PASS |
 | 114 | **`go-multierror`** | [`go-multierror`](./go-multierror) | Thread-Safe Multi-Error Accumulator with Go 1.20+ `Unwrap() []error` Support | ✅ 100% StdLib | ✅ PASS |
 | 115 | **`go-pathkit`** | [`go-pathkit`](./go-pathkit) | Path Traversal Defense, Crash-Proof Atomic File Writes & Directory Walker | ✅ 100% StdLib | ✅ PASS |
 | 116 | **`go-saga`** | [`go-saga`](./go-saga) | Distributed Transaction Saga Orchestrator with Reverse Backward Compensation | ✅ 100% StdLib | ✅ PASS |
 | 117 | **`go-sqlscan`** | [`go-sqlscan`](./go-sqlscan) | Reflection-Cached SQL Rows to Struct Scanner (`ScanAll[T]` & `ScanOne[T]`) | ✅ 100% StdLib | ✅ PASS |
-| 118 | **`go-eventemitter`** | [`go-eventemitter`](./go-eventemitter) | Event Pub-Sub Engine with `On`, `Once`, Wildcards & Listener Leak Warnings | ✅ 100% StdLib | ✅ PASS |
+| 118 | **`go-events/eventemitter`** | [`go-events/eventemitter`](./go-events/eventemitter) | Event Pub-Sub Engine with `On`, `Once`, Wildcards & Listener Leak Warnings | ✅ 100% StdLib | ✅ PASS |
 | 119 | **`go-colorlog`** | [`go-colorlog`](./go-colorlog) | Zero-Allocation Structured Terminal Logger with Color Badges & Caller Tracing | ✅ 100% StdLib | ✅ PASS |
-| 120 | **`go-queryfilter`** | [`go-queryfilter`](./go-queryfilter) | Safe REST URL Query to SQL WHERE & ORDER BY Parameterized Builder | ✅ 100% StdLib | ✅ PASS |
-| 121 | **`go-adaptivepool`** | [`go-adaptivepool`](./go-adaptivepool) | Auto-Scaling Elastic Worker Pool with Dynamic Expansion & Idle Worker Eviction | ✅ 100% StdLib | ✅ PASS |
+| 120 | **`go-paginate/queryfilter`** | [`go-paginate/queryfilter`](./go-paginate/queryfilter) | Safe REST URL Query to SQL WHERE & ORDER BY Parameterized Builder | ✅ 100% StdLib | ✅ PASS |
+| 121 | **`go-workerpool/adaptivepool`** | [`go-workerpool/adaptivepool`](./go-workerpool/adaptivepool) | Auto-Scaling Elastic Worker Pool with Dynamic Expansion & Idle Worker Eviction | ✅ 100% StdLib | ✅ PASS |
 | 122 | **`go-countingbloom`** | [`go-countingbloom`](./go-countingbloom) | Counting Bloom Filter with Safe Deletion (`Remove`) & Counter Saturation Protection | ✅ 100% StdLib | ✅ PASS |
-| 123 | **`go-mimekit`** | [`go-mimekit`](./go-mimekit) | 512-Byte Magic Byte File Sniffer & Polyglot Executable Defense with Stream Rewinding | ✅ 100% StdLib | ✅ PASS |
+| 123 | **`go-image-filekit/mimekit`** | [`go-image-filekit/mimekit`](./go-image-filekit/mimekit) | 512-Byte Magic Byte File Sniffer & Polyglot Executable Defense with Stream Rewinding | ✅ 100% StdLib | ✅ PASS |
 | 124 | **`go-tamperseal`** | [`go-tamperseal`](./go-tamperseal) | Cryptographic Tamper-Proof Data Seal with Expiration & Constant-Time Verification | ✅ 100% StdLib | ✅ PASS |
 | 125 | **`go-slidingstats`** | [`go-slidingstats`](./go-slidingstats) | Rolling Window Streaming Statistics & Latency Percentiles (P50, P90, P95, P99) | ✅ 100% StdLib | ✅ PASS |
 | 126 | **`go-wshub`** | [`go-wshub`](./go-wshub) | Real-Time WebSocket Hub, Room Multiplexing, Heartbeat & Event Dispatcher | ✅ 100% StdLib | ✅ PASS |
@@ -162,8 +177,8 @@ To keep every Go service lightweight while maintaining instant access to common 
 | 136 | **`go-gemini`** | [`go-gemini`](./go-gemini) | Google Gemini 1.5/2.0 REST AI Client with Streaming & Structured Outputs | ✅ 100% StdLib | ✅ PASS |
 | 137 | **`go-geodistance`** | [`go-geodistance`](./go-geodistance) | Ultra-Fast Vincenty/Haversine Geodesic Distance & Proximity Clustering | ✅ 100% StdLib | ✅ PASS |
 | 138 | **`go-hinglish`** | [`go-hinglish`](./go-hinglish) | Phonetic Hinglish-to-English Transliteration & Normalization Search Engine | ✅ 100% StdLib | ✅ PASS |
-| 139 | **`go-imagefx`** | [`go-imagefx`](./go-imagefx) | High-Efficiency Image Watermarking, Aspect Cropping & Thumbnail Generator | ✅ 100% StdLib | ✅ PASS |
-| 140 | **`go-studiocomp`** | [`go-studiocomp`](./go-studiocomp) | Studio Product Photo Background Cleanup, Dropshadow & Composite Canvas | ✅ 100% StdLib | ✅ PASS |
+| 139 | **`go-image-filekit/imagefx`** | [`go-image-filekit/imagefx`](./go-image-filekit/imagefx) | High-Efficiency Image Watermarking, Aspect Cropping & Thumbnail Generator | ✅ 100% StdLib | ✅ PASS |
+| 140 | **`go-image-filekit/studiocomp`** | [`go-image-filekit/studiocomp`](./go-image-filekit/studiocomp) | Studio Product Photo Background Cleanup, Dropshadow & Composite Canvas | ✅ 100% StdLib | ✅ PASS |
 | 141 | **`go-dataloader`** | [`go-dataloader`](./go-dataloader) | Generic N+1 Query Elimination & Request Coalescing with Memoization Cache | ✅ 100% StdLib | ✅ PASS |
 | 142 | **`go-deadlock`** | [`go-deadlock`](./go-deadlock) | Runtime Lock-Order Inversion Cycle Detector & Mutex Starvation Monitor | ✅ 100% StdLib | ✅ PASS |
 | 143 | **`go-bulkhead`** | [`go-bulkhead`](./go-bulkhead) | Netflix/Hystrix Concurrency Partitioning, Queue Limits & Backpressure Isolator | ✅ 100% StdLib | ✅ PASS |
@@ -176,10 +191,10 @@ To keep every Go service lightweight while maintaining instant access to common 
 | 150 | **`go-crdt`** | [`go-crdt`](./go-crdt) | Conflict-Free Replicated Data Types (PNCounter, LWWRegister, ORSet) for Offline Sync | ✅ 100% StdLib | ✅ PASS |
 | 151 | **`go-pgexplain`** | [`go-pgexplain`](./go-pgexplain) | Automated PostgreSQL Slow Query EXPLAIN Interceptor, Seq Scan & Missing Index Auditor | ✅ 100% StdLib | ✅ PASS |
 | 152 | **`go-shadow`** | [`go-shadow`](./go-shadow) | Asynchronous Production HTTP Traffic Mirroring, Candidate Invocation & Response Diffing | ✅ 100% StdLib | ✅ PASS |
-| 153 | **`go-hotconfig`** | [`go-hotconfig`](./go-hotconfig) | Lock-Free Zero-Downtime Hot Config Reloader with SHA-256 Checksum & Inode Watcher | ✅ 100% StdLib | ✅ PASS |
+| 153 | **`go-env/hotconfig`** | [`go-env/hotconfig`](./go-env/hotconfig) | Lock-Free Zero-Downtime Hot Config Reloader with SHA-256 Checksum & Inode Watcher | ✅ 100% StdLib | ✅ PASS |
 | 154 | **`go-bm25`** | [`go-bm25`](./go-bm25) | In-Memory Full-Text Inverted Index Search Engine with Okapi BM25 Probabilistic Ranking | ✅ 100% StdLib | ✅ PASS |
-| 155 | **`go-tinylfu`** | [`go-tinylfu`](./go-tinylfu) | Caffeine Window TinyLFU Cache: 4-Bit Count-Min Sketch & Segmented LRU Scan Resistance | ✅ 100% StdLib | ✅ PASS |
-| 156 | **`go-geofence`** | [`go-geofence`](./go-geofence) | Sub-µs Point-in-Polygon (PIP) Ray Casting, AABB O(1) Pre-Filter & Haversine Distance | ✅ 100% StdLib | ✅ PASS |
+| 155 | **`go-cachekit/tinylfu`** | [`go-cachekit/tinylfu`](./go-cachekit/tinylfu) | Caffeine Window TinyLFU Cache: 4-Bit Count-Min Sketch & Segmented LRU Scan Resistance | ✅ 100% StdLib | ✅ PASS |
+| 156 | **`go-geodistance/geofence`** | [`go-geodistance/geofence`](./go-geodistance/geofence) | Sub-µs Point-in-Polygon (PIP) Ray Casting, AABB O(1) Pre-Filter & Haversine Distance | ✅ 100% StdLib | ✅ PASS |
 | 157 | **`go-merkle`** | [`go-merkle`](./go-merkle) | RFC 6962 Binary Merkle Tree, Audit Path Generation & O(log N) Cryptographic Proofs | ✅ 100% StdLib | ✅ PASS |
 | 158 | **`go-pricing`** | [`go-pricing`](./go-pricing) | Enterprise E-Commerce Dynamic Tiered Pricing, Quantity Breaks, Bundles & Coupon Engine | ✅ 100% StdLib | ✅ PASS |
 | 159 | **`go-window`** | [`go-window`](./go-window) | Streaming Sliding & Tumbling Window Aggregator with Event-Time Watermarking & Late Arrival Handling | ✅ 100% StdLib | ✅ PASS |
@@ -203,6 +218,11 @@ To keep every Go service lightweight while maintaining instant access to common 
 | 177 | **`go-tdigest`** | [`go-tdigest`](./go-tdigest) | Ted Dunning's t-Digest Online Streaming Quantile Estimator (P50, P90, P99) & Centroid Merging | ✅ 100% StdLib | ✅ PASS |
 | 178 | **`go-rbtree`** | [`go-rbtree`](./go-rbtree) | Left-Leaning Red-Black (LLRB) Self-Balancing Tree with Floor, Ceiling & Range Iterators | ✅ 100% StdLib | ✅ PASS |
 | 179 | **`go-bitmapindex`** | [`go-bitmapindex`](./go-bitmapindex) | Columnar Bit-Sliced Index (BSI) Engine for Ultra-Fast OLAP Range Filtering and Aggregations | ✅ 100% StdLib | ✅ PASS |
+| 180 | **`go-cachekit/data`** | [`go-cachekit/data`](./go-cachekit/data) | Cache facade for the multi-tier cache engine and store types | ✅ 100% StdLib | ✅ PASS |
+| 181 | **`go-cachekit/data/cache`** | [`go-cachekit/data/cache`](./go-cachekit/data/cache) | Multi-tier cache engine, stores, singleflight protection, and typed helpers | ✅ 100% StdLib | ✅ PASS |
+| 182 | **`go-taskqueue/async`** | [`go-taskqueue/async`](./go-taskqueue/async) | Async execution and task orchestration package within `go-taskqueue` | ✅ 100% StdLib | ✅ PASS |
+| 183 | **`go-authkit/securityauth`** | [`go-authkit/securityauth`](./go-authkit/securityauth) | Authentication engine and user store package within `go-authkit` | ❌ (`go-authkit` dependencies) | ✅ PASS |
+| 184 | **`go-taskqueue/async/taskqueue`** | [`go-taskqueue/async/taskqueue`](./go-taskqueue/async/taskqueue) | Bounded task queue with retries and panic isolation | ✅ 100% StdLib | ✅ PASS |
 
 ---
 

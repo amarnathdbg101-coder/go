@@ -14,41 +14,62 @@ type LibraryItem struct {
 	ID          int
 	Name        string
 	Path        string
+	Module      string
+	ModuleDir   string
+	ImportPath  string
 	Description string
 	StdLib      string
 	Status      string
 }
 
-// FindLibraryRoot finds the root C:\Library directory.
+// FindLibraryRoot finds the library workspace root.
 func FindLibraryRoot() string {
-	// 1. Check current directory and parents
+	if root := os.Getenv("LIBKIT_ROOT"); root != "" {
+		if hasCatalog(root) {
+			return filepath.Clean(root)
+		}
+		return ""
+	}
+
 	curr, err := os.Getwd()
 	if err == nil {
-		for {
-			if _, err := os.Stat(filepath.Join(curr, "CATALOG.md")); err == nil {
-				return curr
-			}
-			parent := filepath.Dir(curr)
-			if parent == curr {
-				break
-			}
-			curr = parent
+		if root := findRootFrom(curr); root != "" {
+			return root
 		}
 	}
 
-	// 2. Fallback to standard C:\Library
-	if _, err := os.Stat(`C:\Library\CATALOG.md`); err == nil {
-		return `C:\Library`
+	executable, err := os.Executable()
+	if err == nil {
+		return findRootFrom(filepath.Dir(executable))
 	}
 
 	return ""
+}
+
+func findRootFrom(start string) string {
+	curr := start
+	for {
+		if hasCatalog(curr) {
+			return curr
+		}
+		parent := filepath.Dir(curr)
+		if parent == curr {
+			return ""
+		}
+		curr = parent
+	}
+}
+
+func hasCatalog(root string) bool {
+	info, err := os.Stat(filepath.Join(root, "CATALOG.md"))
+	return err == nil && !info.IsDir()
 }
 
 // LoadCatalog parses CATALOG.md to extract all cataloged libraries.
 func LoadCatalog() ([]LibraryItem, error) {
 	rootDir := FindLibraryRoot()
 	if rootDir == "" {
-		return nil, fmt.Errorf("could not locate C:\\Library\\CATALOG.md")
+		return nil, fmt.Errorf("could not locate CATALOG.md; run from the library workspace or set LIBKIT_ROOT")
 	}
 
 	catalogFile := filepath.Join(rootDir, "CATALOG.md")
@@ -60,8 +81,10 @@ func LoadCatalog() ([]LibraryItem, error) {
 
 	var items []LibraryItem
 	scanner := bufio.NewScanner(file)
+	lineNumber := 0
 
 	for scanner.Scan() {
+		lineNumber++
 		line := strings.TrimSpace(scanner.Text())
 		if !strings.HasPrefix(line, "|") || strings.Contains(line, "---|") {
 			continue
@@ -85,12 +108,35 @@ func LoadCatalog() ([]LibraryItem, error) {
 		stdlib := strings.TrimSpace(parts[5])
 		status := strings.TrimSpace(parts[6])
 
-		libPath := filepath.Join(rootDir, name)
+		pathLink := strings.TrimSpace(parts[3])
+		linkSeparator := strings.Index(pathLink, "](")
+		if linkSeparator < 0 || !strings.HasSuffix(pathLink, ")") {
+			return nil, fmt.Errorf("catalog line %d has an invalid library path link", lineNumber)
+		}
+		relativePath := pathLink[linkSeparator+2 : len(pathLink)-1]
+		if !strings.HasPrefix(relativePath, "./") {
+			return nil, fmt.Errorf("catalog line %d path must be workspace-relative", lineNumber)
+		}
+		relativePath = strings.TrimPrefix(relativePath, "./")
+		cleanRelativePath := filepath.Clean(filepath.FromSlash(relativePath))
+		if cleanRelativePath == "." || cleanRelativePath == ".." ||
+			strings.HasPrefix(cleanRelativePath, ".."+string(filepath.Separator)) ||
+			filepath.IsAbs(cleanRelativePath) {
+			return nil, fmt.Errorf("catalog line %d has an invalid library path", lineNumber)
+		}
+
+		pathSegments := strings.Split(filepath.ToSlash(cleanRelativePath), "/")
+		module := pathSegments[0]
+		libPath := filepath.Join(rootDir, cleanRelativePath)
+		moduleDir := filepath.Join(rootDir, module)
 
 		items = append(items, LibraryItem{
 			ID:          id,
 			Name:        name,
 			Path:        libPath,
+			Module:      module,
+			ModuleDir:   moduleDir,
+			ImportPath:  "github.com/amarnathdbg101-coder/go/" + filepath.ToSlash(cleanRelativePath),
 			Description: desc,
 			StdLib:      stdlib,
 			Status:      status,

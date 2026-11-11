@@ -2,8 +2,6 @@ go 1.26.5
 
 use (
 	./go-adaptivelimit
-	./go-adaptivepool
-	./go-async
 	./go-atomic
 	./go-auditlog
 	./go-authkit
@@ -38,7 +36,6 @@ use (
 	./go-csvkit
 	./go-cuckoofilter
 	./go-dag
-	./go-data
 	./go-dataloader
 	./go-dbbackup
 	./go-deadlock
@@ -51,28 +48,21 @@ use (
 	./go-disruptor
 	./go-distlock
 	./go-env
-	./go-envconfig
-	./go-envvalidator
 	./go-escpos
 	./go-etag
-	./go-eventemitter
 	./go-events
 	./go-eventstore
-	./go-exponentialbackoff
 	./go-expr
 	./go-featureflag
 	./go-fsm
 	./go-fuzzy
 	./go-gemini
 	./go-geodistance
-	./go-geofence
-	./go-geohash
 	./go-gopdf-pdfkit
 	./go-hashring
 	./go-healthcheck
 	./go-heavyhitters
 	./go-hinglish
-	./go-hotconfig
 	./go-hpack
 	./go-httpclient
 	./go-humanize
@@ -80,7 +70,6 @@ use (
 	./go-idempotency
 	./go-idgen
 	./go-image-filekit
-	./go-imagefx
 	./go-imghash
 	./go-ipkit
 	./go-jsonpath
@@ -90,16 +79,13 @@ use (
 	./go-kvstore
 	./go-latch
 	./go-ledger
-	./go-lfu
 	./go-locks
-	./go-lru
 	./go-lsmtree
 	./go-mask
 	./go-media
 	./go-merkle
 	./go-metrics
 	./go-migrator
-	./go-mimekit
 	./go-mockdb
 	./go-money
 	./go-multierror
@@ -120,7 +106,6 @@ use (
 	./go-pricing
 	./go-priorityqueue
 	./go-pubsub
-	./go-queryfilter
 	./go-radix
 	./go-raft
 	./go-ratelimit
@@ -129,7 +114,6 @@ use (
 	./go-resilience
 	./go-retailtaxo
 	./go-retry
-	./go-retryablehttp
 	./go-ringbuffer
 	./go-roaring
 	./go-safecast
@@ -156,7 +140,6 @@ use (
 	./go-stopwatch
 	./go-strcase
 	./go-stream
-	./go-studiocomp
 	./go-supervisor
 	./go-syncchan
 	./go-syncmap
@@ -167,7 +150,6 @@ use (
 	./go-tdigest
 	./go-templatekit
 	./go-timingwheel
-	./go-tinylfu
 	./go-trafficshaper
 	./go-tree
 	./go-units
@@ -175,7 +157,6 @@ use (
 	./go-urlsigner
 	./go-useragent
 	./go-validator
-	./go-valrules
 	./go-vectorindex
 	./go-version
 	./go-w3ctrace
