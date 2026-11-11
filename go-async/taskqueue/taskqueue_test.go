@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shopsilo/go-async/taskqueue"
+	"github.com/amarnathdbg101-coder/go/go-async/taskqueue"
 )
 
 func TestTaskQueue_BasicProcess(t *testing.T) {

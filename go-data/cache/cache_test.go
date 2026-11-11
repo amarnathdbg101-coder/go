@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shopsilo/go-data/cache"
+	"github.com/amarnathdbg101-coder/go/go-data/cache"
 )
 
 type Product struct {

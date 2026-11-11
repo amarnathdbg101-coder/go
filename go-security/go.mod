@@ -1,4 +1,4 @@
-module github.com/shopsilo/go-security
+module github.com/amarnathdbg101-coder/go/go-security
 
 go 1.25.0
 

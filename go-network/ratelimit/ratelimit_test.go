@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shopsilo/go-network/ratelimit"
+	"github.com/amarnathdbg101-coder/go/go-network/ratelimit"
 )
 
 func TestLimiter_BasicAllow(t *testing.T) {

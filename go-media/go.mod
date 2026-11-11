@@ -1,4 +1,4 @@
-module github.com/shopsilo/go-media
+module github.com/amarnathdbg101-coder/go/go-media
 
 go 1.25.0
 

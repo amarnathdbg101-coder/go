@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shopsilo/go-security/auth"
+	"github.com/amarnathdbg101-coder/go/go-security/auth"
 )
 
 func setupTestEngine(t *testing.T) (*auth.Engine, *auth.MemoryUserStore, *otpRecorder) {
