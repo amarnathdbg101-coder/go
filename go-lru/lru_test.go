@@ -117,3 +117,45 @@ func TestLRU_ConcurrentStress(t *testing.T) {
 		t.Errorf("cache size %d exceeded capacity %d", c.Len(), c.Cap())
 	}
 }
+
+func TestLFU_FrequencyEviction(t *testing.T) {
+	var evictedKeys []string
+	c, err := NewLFU[string, int](3, func(k string, v int) {
+		evictedKeys = append(evictedKeys, k)
+	})
+	if err != nil {
+		t.Fatalf("NewLFU failed: %v", err)
+	}
+
+	c.Set("k1", 10)
+	c.Set("k2", 20)
+	c.Set("k3", 30)
+
+	// Access k1 and k2 multiple times to bump their frequency
+	_, _ = c.Get("k1")
+	_, _ = c.Get("k1")
+	_, _ = c.Get("k2")
+
+	// k3 has frequency 1, k2 has 2, k1 has 3
+	// Inserting k4 should evict k3 (least frequently used)
+	c.Set("k4", 40)
+
+	if _, ok := c.Get("k3"); ok {
+		t.Errorf("expected k3 to be evicted by LFU policy")
+	}
+
+	if val, ok := c.Get("k1"); !ok || val != 10 {
+		t.Errorf("expected k1 to be retained with val 10")
+	}
+
+	if len(evictedKeys) != 1 || evictedKeys[0] != "k3" {
+		t.Errorf("expected evictedKeys [k3], got %v", evictedKeys)
+	}
+
+	// Delete
+	c.Delete("k1")
+	if _, ok := c.Get("k1"); ok {
+		t.Errorf("k1 should have been deleted")
+	}
+}
+

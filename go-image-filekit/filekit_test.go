@@ -247,3 +247,110 @@ func TestUploader_UploadFromRequest(t *testing.T) {
 		t.Errorf("expected 100x100, got %dx%d", result.Width, result.Height)
 	}
 }
+
+func TestUploader_DecompressionBombBlocked(t *testing.T) {
+	storage := filekit.NewMemoryStorage("/uploads")
+	// Set max dimension to 150px
+	uploader, err := filekit.NewUploader(storage, filekit.WithMaxDimension(150))
+	if err != nil {
+		t.Fatalf("NewUploader failed: %v", err)
+	}
+
+	// 200x200 image exceeds 150px limit
+	bigImgData := createTestPNG(200, 200)
+	_, err = uploader.UploadImage(context.Background(), "bomb.png", bytes.NewReader(bigImgData))
+	if err != filekit.ErrDecompressionBomb {
+		t.Fatalf("expected ErrDecompressionBomb, got: %v", err)
+	}
+}
+
+func TestMemoryStorage_FullFlow(t *testing.T) {
+	storage := filekit.NewMemoryStorage("https://cdn.shopsilo.com/media")
+	ctx := context.Background()
+
+	content := []byte("invoice payload data")
+	url, err := storage.Save(ctx, "invoices/inv_01.pdf", bytes.NewReader(content), int64(len(content)), "application/pdf")
+	if err != nil {
+		t.Fatalf("save failed: %v", err)
+	}
+
+	if url != "https://cdn.shopsilo.com/media/invoices/inv_01.pdf" {
+		t.Errorf("unexpected url: %s", url)
+	}
+
+	exists, err := storage.Exists(ctx, "invoices/inv_01.pdf")
+	if err != nil || !exists {
+		t.Fatalf("expected file to exist in memory storage")
+	}
+
+	rc, err := storage.Open(ctx, "invoices/inv_01.pdf")
+	if err != nil {
+		t.Fatalf("open failed: %v", err)
+	}
+	readBytes, _ := io.ReadAll(rc)
+	_ = rc.Close()
+
+	if string(readBytes) != string(content) {
+		t.Fatalf("content mismatch")
+	}
+
+	err = storage.Delete(ctx, "invoices/inv_01.pdf")
+	if err != nil {
+		t.Fatalf("delete failed: %v", err)
+	}
+
+	existsAfter, _ := storage.Exists(ctx, "invoices/inv_01.pdf")
+	if existsAfter {
+		t.Fatalf("file should not exist after delete")
+	}
+}
+
+func TestCompressAndEncode_GIF_And_PNG(t *testing.T) {
+	img := image.NewRGBA(image.Rect(0, 0, 10, 10))
+
+	// GIF
+	gifBytes, err := filekit.CompressAndEncode(img, "gif", 80)
+	if err != nil || len(gifBytes) == 0 {
+		t.Fatalf("gif encoding failed: %v", err)
+	}
+
+	// PNG
+	pngBytes, err := filekit.CompressAndEncode(img, "png", 80)
+	if err != nil || len(pngBytes) == 0 {
+		t.Fatalf("png encoding failed: %v", err)
+	}
+
+	// Fallback format
+	fallbackBytes, err := filekit.CompressAndEncode(img, "unknown_raw", 80)
+	if err != nil || len(fallbackBytes) == 0 {
+		t.Fatalf("fallback encoding failed: %v", err)
+	}
+}
+
+func TestExtForMime_All(t *testing.T) {
+	cases := map[string]string{
+		"image/jpeg":        ".jpg",
+		"image/png":         ".png",
+		"image/webp":        ".webp",
+		"image/gif":         ".gif",
+		"application/pdf":   ".pdf",
+		"image/svg+xml":     ".svg",
+		"application/other": ".bin",
+	}
+
+	for mime, expectedExt := range cases {
+		got := filekit.ExtForMime(mime)
+		if got != expectedExt {
+			t.Errorf("for mime %s expected ext %s, got %s", mime, expectedExt, got)
+		}
+	}
+}
+
+func TestUploader_StorageMethod(t *testing.T) {
+	storage := filekit.NewMemoryStorage("/uploads")
+	uploader, _ := filekit.NewUploader(storage)
+
+	if uploader.Storage() != storage {
+		t.Errorf("Storage() should return matching storage reference")
+	}
+}

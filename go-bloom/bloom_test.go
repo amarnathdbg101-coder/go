@@ -98,6 +98,50 @@ func TestBloom_Reset(t *testing.T) {
 	}
 }
 
+func TestCountingFilter_AddAndRemove(t *testing.T) {
+	cf, err := NewCounting(1000, 0.01)
+	if err != nil {
+		t.Fatalf("failed to create CountingFilter: %v", err)
+	}
+
+	cf.AddString("user_101")
+	cf.AddString("user_102")
+
+	if !cf.ContainsString("user_101") || !cf.ContainsString("user_102") {
+		t.Fatal("expected user_101 and user_102 to be present")
+	}
+	if cf.ContainsString("user_999") {
+		t.Fatal("expected user_999 to not be present")
+	}
+
+	if cf.Elements() != 2 {
+		t.Errorf("expected 2 elements, got %d", cf.Elements())
+	}
+
+	// Remove user_101
+	removed := cf.RemoveString("user_101")
+	if !removed {
+		t.Fatal("expected successful removal of user_101")
+	}
+	if cf.ContainsString("user_101") {
+		t.Fatal("user_101 should no longer be present after removal")
+	}
+	if !cf.ContainsString("user_102") {
+		t.Fatal("user_102 should still be present after removing user_101")
+	}
+
+	if cf.Elements() != 1 {
+		t.Errorf("expected 1 element, got %d", cf.Elements())
+	}
+
+	// Reset
+	cf.Reset()
+	if cf.ContainsString("user_102") {
+		t.Fatal("user_102 should not be present after reset")
+	}
+}
+
+
 func BenchmarkContains(b *testing.B) {
 	bf, _ := New(100000, 0.01)
 	for i := 0; i < 100000; i++ {

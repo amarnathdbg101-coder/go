@@ -247,3 +247,42 @@ func TestTaskQueue_BufferFull(t *testing.T) {
 		t.Errorf("expected ErrQueueFull on saturated buffer, got: %v", err)
 	}
 }
+
+func TestTaskQueue_EnqueueAfter(t *testing.T) {
+	engine := taskqueue.New(
+		taskqueue.WithWorkers(2),
+		taskqueue.WithBufferSize(10),
+	)
+
+	var executed atomic.Bool
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	engine.Register("task:delayed", func(ctx context.Context, task *taskqueue.Task) error {
+		executed.Store(true)
+		wg.Done()
+		return nil
+	})
+
+	engine.Start()
+	defer func() {
+		_ = engine.Shutdown(context.Background())
+	}()
+
+	start := time.Now()
+	_, err := engine.EnqueueAfter("task:delayed", "reminder_data", 50*time.Millisecond)
+	if err != nil {
+		t.Fatalf("EnqueueAfter failed: %v", err)
+	}
+
+	wg.Wait()
+	elapsed := time.Since(start)
+
+	if !executed.Load() {
+		t.Errorf("expected delayed task to execute")
+	}
+	if elapsed < 40*time.Millisecond {
+		t.Errorf("expected task to delay at least 40ms, ran in %v", elapsed)
+	}
+}
+

@@ -202,3 +202,70 @@ func TestWriteValidationError(t *testing.T) {
 		t.Errorf("expected json error response, got: %s", respBody)
 	}
 }
+
+func TestEnterpriseRules(t *testing.T) {
+	// PAN
+	if !validator.IsPAN("ABCDE1234F") {
+		t.Errorf("expected valid PAN")
+	}
+	if validator.IsPAN("INVALID_PAN") {
+		t.Errorf("expected invalid PAN")
+	}
+
+	// GSTIN
+	if !validator.IsGSTIN("27ABCDE1234F1Z5") {
+		t.Errorf("expected valid GSTIN")
+	}
+	if validator.IsGSTIN("99INVALIDGSTIN") {
+		t.Errorf("expected invalid GSTIN")
+	}
+
+	// IFSC
+	if !validator.IsIFSC("HDFC0000123") {
+		t.Errorf("expected valid IFSC")
+	}
+	if validator.IsIFSC("HDFC123") {
+		t.Errorf("expected invalid IFSC")
+	}
+
+	// Luhn
+	if !validator.IsLuhn("49927398716") {
+		t.Errorf("expected valid Luhn card number")
+	}
+	if validator.IsLuhn("49927398717") {
+		t.Errorf("expected invalid Luhn card number")
+	}
+
+	// Indian Mobile
+	if !validator.IsIndianMobile("9876543210") {
+		t.Errorf("expected valid Indian mobile")
+	}
+	if validator.IsIndianMobile("1234567890") {
+		t.Errorf("expected invalid Indian mobile")
+	}
+
+	// E164
+	if !validator.IsE164("+919876543210") {
+		t.Errorf("expected valid E164 phone")
+	}
+	if validator.IsE164("09876543210") {
+		t.Errorf("expected invalid E164 phone")
+	}
+
+	// MAC
+	if !validator.IsMAC("00:1B:44:11:3A:B7") {
+		t.Errorf("expected valid MAC")
+	}
+	if validator.IsMAC("not-a-mac") {
+		t.Errorf("expected invalid MAC")
+	}
+
+	// Base64 & Hex
+	if !validator.IsBase64("SGVsbG8gV29ybGQ=") {
+		t.Errorf("expected valid Base64")
+	}
+	if !validator.IsHex("48656c6c6f") {
+		t.Errorf("expected valid Hex")
+	}
+}
+

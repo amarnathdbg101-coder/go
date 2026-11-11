@@ -21,3 +21,14 @@ func CheckPassword(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
+
+// GenerateDummyHash creates a valid Bcrypt hash used for constant-time dummy comparisons
+// during login attempts with non-existent emails, defeating timing side-channel attacks.
+func GenerateDummyHash(cost int) string {
+	hash, err := HashPassword("anti-timing-dummy-secret-hash", cost)
+	if err != nil {
+		// Fallback to minimal valid bcrypt structure if generation fails
+		return "$2a$12$e8kZ2aF5c84iA7c40d99uu4yJjCjY53o4c/qMhN1gG1wO7L4M7K0i"
+	}
+	return hash
+}

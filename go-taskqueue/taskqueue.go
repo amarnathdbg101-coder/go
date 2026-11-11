@@ -125,6 +125,45 @@ func (e *Engine) EnqueueWait(ctx context.Context, taskType string, payload any) 
 	return task, nil
 }
 
+// EnqueueAfter schedules a task to be enqueued for execution after the specified delay duration.
+func (e *Engine) EnqueueAfter(taskType string, payload any, delay time.Duration) (*Task, error) {
+	if e.isStopped.Load() {
+		return nil, ErrQueueClosed
+	}
+
+	task, err := NewTask(taskType, payload)
+	if err != nil {
+		return nil, err
+	}
+	task.MaxRetries = e.cfg.MaxRetries
+
+	if delay <= 0 {
+		if err := e.queue.Enqueue(task); err != nil {
+			return nil, err
+		}
+		return task, nil
+	}
+
+	e.wg.Add(1)
+	go func() {
+		defer e.wg.Done()
+		timer := time.NewTimer(delay)
+		defer timer.Stop()
+
+		select {
+		case <-e.ctx.Done():
+			return
+		case <-timer.C:
+			if !e.isStopped.Load() {
+				_ = e.queue.Enqueue(task)
+			}
+		}
+	}()
+
+	return task, nil
+}
+
+
 // workerLoop is the continuous execution loop for an individual worker goroutine.
 func (e *Engine) workerLoop(workerID int) {
 	defer e.wg.Done()

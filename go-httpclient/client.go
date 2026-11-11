@@ -18,6 +18,7 @@ type Client struct {
 	retryConfig    RetryConfig
 	circuitBreaker *CircuitBreaker
 	defaultHeaders map[string]string
+	onRetry        OnRetryFunc
 }
 
 // Option configures the Client.
@@ -34,6 +35,20 @@ func WithTimeout(d time.Duration) Option {
 func WithRetry(cfg RetryConfig) Option {
 	return func(c *Client) {
 		c.retryConfig = cfg
+	}
+}
+
+// WithRetryPolicy sets a custom retry decision policy.
+func WithRetryPolicy(policy RetryPolicy) Option {
+	return func(c *Client) {
+		c.retryConfig.RetryPolicy = policy
+	}
+}
+
+// WithOnRetry registers an observability callback invoked before each retry wait.
+func WithOnRetry(fn OnRetryFunc) Option {
+	return func(c *Client) {
+		c.onRetry = fn
 	}
 }
 
@@ -131,8 +146,38 @@ func (c *Client) sendJSON(ctx context.Context, method, urlStr string, body any, 
 	return c.Do(req, target)
 }
 
+// NewRequest creates an http.Request with rewindable GetBody from bytes, string, or io.Reader.
+func NewRequest(ctx context.Context, method, urlStr string, body io.Reader) (*http.Request, error) {
+	var bodyBytes []byte
+	if body != nil {
+		var err error
+		bodyBytes, err = io.ReadAll(body)
+		if err != nil {
+			return nil, fmt.Errorf("httpclient: read request body: %w", err)
+		}
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, urlStr, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, fmt.Errorf("httpclient: create request: %w", err)
+	}
+
+	if bodyBytes != nil {
+		req.GetBody = func() (io.ReadCloser, error) {
+			return io.NopCloser(bytes.NewReader(bodyBytes)), nil
+		}
+		req.ContentLength = int64(len(bodyBytes))
+	}
+
+	return req, nil
+}
+
 // Do executes an HTTP request with circuit breaker, retries, and automatic body management.
 func (c *Client) Do(req *http.Request, target any) (*http.Response, error) {
+	if req == nil {
+		return nil, ErrNilRequest
+	}
+
 	// Set default headers
 	for k, v := range c.defaultHeaders {
 		if req.Header.Get(k) == "" {
@@ -143,14 +188,19 @@ func (c *Client) Do(req *http.Request, target any) (*http.Response, error) {
 		req.Header.Set("Accept", "application/json")
 	}
 
-	// Buffer body if retries might be needed
-	var bodyBytes []byte
-	if req.Body != nil {
-		var err error
-		bodyBytes, err = io.ReadAll(req.Body)
-		_ = req.Body.Close()
+	// Buffer body if retries might be needed and GetBody is not yet set
+	if req.Body != nil && req.GetBody == nil {
+		bodyBytes, err := io.ReadAll(req.Body)
 		if err != nil {
 			return nil, fmt.Errorf("httpclient: read request body: %w", err)
+		}
+		_ = req.Body.Close()
+		req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		req.GetBody = func() (io.ReadCloser, error) {
+			return io.NopCloser(bytes.NewReader(bodyBytes)), nil
+		}
+		if req.ContentLength <= 0 {
+			req.ContentLength = int64(len(bodyBytes))
 		}
 	}
 
@@ -168,9 +218,13 @@ func (c *Client) Do(req *http.Request, target any) (*http.Response, error) {
 			}
 		}
 
-		// Rebuild body for retry attempt
-		if bodyBytes != nil {
-			req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		// Rebuild / rewind body for retry attempt
+		if attempt > 0 && req.GetBody != nil {
+			body, errBody := req.GetBody()
+			if errBody != nil {
+				return nil, fmt.Errorf("%w: %v", ErrMissingGetBody, errBody)
+			}
+			req.Body = body
 		}
 
 		// Execute request
@@ -181,12 +235,17 @@ func (c *Client) Do(req *http.Request, target any) (*http.Response, error) {
 				c.circuitBreaker.RecordFailure()
 			}
 
-			if c.retryConfig.IsRetryable(0, err) && attempt < maxAttempts-1 {
-				backoff := c.retryConfig.BackoffDuration(attempt)
+			if c.retryConfig.CheckRetry(nil, err) && attempt < maxAttempts-1 {
+				if c.onRetry != nil {
+					c.onRetry(attempt+1, req, nil, err)
+				}
+				backoff := c.retryConfig.CalculateBackoff(attempt, nil)
+				timer := time.NewTimer(backoff)
 				select {
 				case <-req.Context().Done():
+					timer.Stop()
 					return nil, req.Context().Err()
-				case <-time.After(backoff):
+				case <-timer.C:
 					continue
 				}
 			}
@@ -194,7 +253,10 @@ func (c *Client) Do(req *http.Request, target any) (*http.Response, error) {
 		}
 
 		// Check status code for retryable conditions
-		if c.retryConfig.IsRetryable(resp.StatusCode, nil) && attempt < maxAttempts-1 {
+		if c.retryConfig.CheckRetry(resp, nil) && attempt < maxAttempts-1 {
+			if c.onRetry != nil {
+				c.onRetry(attempt+1, req, resp, nil)
+			}
 			// Drain and close body before retry to prevent connection leak
 			_, _ = io.Copy(io.Discard, resp.Body)
 			_ = resp.Body.Close()
@@ -203,11 +265,13 @@ func (c *Client) Do(req *http.Request, target any) (*http.Response, error) {
 				c.circuitBreaker.RecordFailure()
 			}
 
-			backoff := c.retryConfig.BackoffDuration(attempt)
+			backoff := c.retryConfig.CalculateBackoff(attempt, resp)
+			timer := time.NewTimer(backoff)
 			select {
 			case <-req.Context().Done():
+				timer.Stop()
 				return nil, req.Context().Err()
-			case <-time.After(backoff):
+			case <-timer.C:
 				continue
 			}
 		}

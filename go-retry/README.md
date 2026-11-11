@@ -6,9 +6,10 @@ Standalone, context-aware function retry engine with full jitter, exponential ba
 
 ## Features
 - 🔄 **Universal & Generics Ready**: `Do()` kisi bhi function ke liye, aur `DoWithData[T]()` direct return value receive karne ke liye.
-- ⚡ **Anti-Thundering Herd (Full Jitter)**: Uniform random jitter sabhi clients ko ek saath server par retry karne se rokta hai.
+- ⚡ **Anti-Thundering Herd (Jitter)**: `FullJitter`, `EqualJitter`, `DecorrelatedJitter` sabhi clients ko ek saath server par spike create karne se rokte hain.
+- 📐 **Multiple Backoff Strategies**: `Exponential`, `Decorrelated` (AWS-recommended), `Linear`, and `Constant` backoffs natively built-in.
 - 🛑 **Conditional Retries (`WithRetryIf`)**: Only network drops ya 503 errors retry karo; 400 Bad Request ya Validation errors ko attempt 1 par hi stop karo.
-- ⏱️ **Context Cancellation Safe**: Agar user ne HTTP request cancel kar di, to background sleep turant terminate ho jati hai.
+- ⏱️ **Zero-Leak Context Timers**: Pure `time.NewTimer` lifecycle management ensures zero memory leaks on context cancellations.
 - 📦 **Zero External Dependencies**: 100% pure Go standard library.
 
 ---

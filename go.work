@@ -3,6 +3,7 @@ go 1.26.5
 use (
 	./go-adaptivelimit
 	./go-adaptivepool
+	./go-async
 	./go-atomic
 	./go-auditlog
 	./go-authkit
@@ -37,6 +38,7 @@ use (
 	./go-csvkit
 	./go-cuckoofilter
 	./go-dag
+	./go-data
 	./go-dataloader
 	./go-dbbackup
 	./go-deadlock
@@ -93,6 +95,7 @@ use (
 	./go-lru
 	./go-lsmtree
 	./go-mask
+	./go-media
 	./go-merkle
 	./go-metrics
 	./go-migrator
@@ -102,6 +105,7 @@ use (
 	./go-multierror
 	./go-mvcc
 	./go-netkit
+	./go-network
 	./go-orderedmap
 	./go-otp
 	./go-outbox
@@ -133,6 +137,7 @@ use (
 	./go-saga
 	./go-sanitize
 	./go-secguard
+	./go-security
 	./go-secureid
 	./go-semaphore
 	./go-set

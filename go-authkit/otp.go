@@ -11,9 +11,10 @@ import (
 
 // otpEntry stores state for an active one-time password.
 type otpEntry struct {
-	code      string
-	expiresAt time.Time
-	attempts  int
+	code          string
+	expiresAt     time.Time
+	attempts      int
+	lastRequested time.Time
 }
 
 // OTPManager manages in-memory, concurrency-safe OTP storage, attempt limits, and automated expiry cleanup.
@@ -22,16 +23,18 @@ type OTPManager struct {
 	store       map[string]*otpEntry
 	ttl         time.Duration
 	maxAttempts int
+	cooldown    time.Duration
 	stopChan    chan struct{}
 	stopOnce    sync.Once
 }
 
 // NewOTPManager creates an OTPManager and starts the background cleanup goroutine.
-func NewOTPManager(ttl time.Duration, maxAttempts int) *OTPManager {
+func NewOTPManager(ttl time.Duration, maxAttempts int, cooldown time.Duration) *OTPManager {
 	m := &OTPManager{
 		store:       make(map[string]*otpEntry),
 		ttl:         ttl,
 		maxAttempts: maxAttempts,
+		cooldown:    cooldown,
 		stopChan:    make(chan struct{}),
 	}
 
@@ -51,27 +54,36 @@ func GenerateCode() (string, error) {
 	return fmt.Sprintf("%06d", n.Int64()+100000), nil
 }
 
-// Create generates and stores a fresh OTP for the given email with configured TTL.
+// Create generates and stores a fresh OTP for the given email with configured TTL and resend cooldown.
 func (m *OTPManager) Create(email string) (string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	now := time.Now()
+	// Spam & bot mitigation: enforce resend cooldown throttle
+	if entry, exists := m.store[email]; exists && m.cooldown > 0 {
+		if now.Sub(entry.lastRequested) < m.cooldown {
+			return "", ErrOTPCooldown
+		}
+	}
+
 	code, err := GenerateCode()
 	if err != nil {
 		return "", err
 	}
 
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	m.store[email] = &otpEntry{
-		code:      code,
-		expiresAt: time.Now().Add(m.ttl),
-		attempts:  0,
+		code:          code,
+		expiresAt:     now.Add(m.ttl),
+		attempts:      0,
+		lastRequested: now,
 	}
 
 	return code, nil
 }
 
 // Verify validates the user provided OTP against stored entry in constant time.
-// Handles brute force attack protection: max 3 attempts ke baad lockout ho jata hai.
+// Handles brute force attack protection: max attempts ke baad lockout ho jata hai.
 func (m *OTPManager) Verify(email, code string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -139,8 +151,9 @@ func (m *OTPManager) cleanupExpired() {
 }
 
 // Close stops the background cleanup loop and frees memory.
-func (m *OTPManager) Close() {
+func (m *OTPManager) Close() error {
 	m.stopOnce.Do(func() {
 		close(m.stopChan)
 	})
+	return nil
 }

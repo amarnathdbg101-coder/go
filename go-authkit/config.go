@@ -28,6 +28,15 @@ type Config struct {
 	// OTPMaxAttempts is the maximum allowed incorrect OTP attempts before lockout. Default: 3.
 	OTPMaxAttempts int
 
+	// OTPCooldown is the minimum time between consecutive OTP generation requests for the same email. Default: 60s.
+	OTPCooldown time.Duration
+
+	// MaxBodyBytes limits the incoming HTTP request payload size to defend against memory exhaustion DoS. Default: 64 KB.
+	MaxBodyBytes int64
+
+	// MinPasswordLength is the minimum acceptable password length. Default: 8.
+	MinPasswordLength int
+
 	// Issuer is embedded in JWT RegisteredClaims (iss). Default: "go-authkit".
 	Issuer string
 
@@ -39,19 +48,89 @@ type Config struct {
 	OnSendOTP func(ctx context.Context, email, otp string) error
 }
 
+// Option represents a functional option for configuring Config.
+type Option func(*Config)
+
+// WithAccessTokenTTL sets the access token validity duration.
+func WithAccessTokenTTL(d time.Duration) Option {
+	return func(c *Config) { c.AccessTokenTTL = d }
+}
+
+// WithRefreshTokenTTL sets the refresh token validity duration.
+func WithRefreshTokenTTL(d time.Duration) Option {
+	return func(c *Config) { c.RefreshTokenTTL = d }
+}
+
+// WithBcryptCost sets the Bcrypt hashing complexity cost (MinCost to MaxCost).
+func WithBcryptCost(cost int) Option {
+	return func(c *Config) { c.BcryptCost = cost }
+}
+
+// WithOTPTTL sets the time before an unconsumed OTP expires.
+func WithOTPTTL(d time.Duration) Option {
+	return func(c *Config) { c.OTPTTL = d }
+}
+
+// WithOTPMaxAttempts sets the maximum invalid OTP attempts before brute force lockout.
+func WithOTPMaxAttempts(attempts int) Option {
+	return func(c *Config) { c.OTPMaxAttempts = attempts }
+}
+
+// WithOTPCooldown sets the throttle duration between consecutive OTP requests for the same identity.
+func WithOTPCooldown(d time.Duration) Option {
+	return func(c *Config) { c.OTPCooldown = d }
+}
+
+// WithMaxBodyBytes sets the maximum HTTP request body read limit in bytes.
+func WithMaxBodyBytes(bytes int64) Option {
+	return func(c *Config) { c.MaxBodyBytes = bytes }
+}
+
+// WithMinPasswordLength sets the minimum allowed password length.
+func WithMinPasswordLength(length int) Option {
+	return func(c *Config) { c.MinPasswordLength = length }
+}
+
+// WithIssuer sets the JWT issuer claim.
+func WithIssuer(issuer string) Option {
+	return func(c *Config) { c.Issuer = issuer }
+}
+
+// WithDefaultRole sets the fallback user role if none is supplied during registration.
+func WithDefaultRole(role string) Option {
+	return func(c *Config) { c.DefaultRole = role }
+}
+
+// WithOnSendOTP configures an external delivery hook for OTP codes (e.g. email, SMS, push).
+func WithOnSendOTP(fn func(ctx context.Context, email, otp string) error) Option {
+	return func(c *Config) { c.OnSendOTP = fn }
+}
+
 // DefaultConfig provides a robust production baseline configuration.
 // Caller sirf apna custom JWTSecret specify karega.
 func DefaultConfig(jwtSecret string) Config {
 	return Config{
-		JWTSecret:       jwtSecret,
-		AccessTokenTTL:  15 * time.Minute,
-		RefreshTokenTTL: 7 * 24 * time.Hour,
-		BcryptCost:      bcrypt.DefaultCost + 2, // 12
-		OTPTTL:          5 * time.Minute,
-		OTPMaxAttempts:  3,
-		Issuer:          "go-authkit",
-		DefaultRole:     "user",
+		JWTSecret:         jwtSecret,
+		AccessTokenTTL:    15 * time.Minute,
+		RefreshTokenTTL:   7 * 24 * time.Hour,
+		BcryptCost:        bcrypt.DefaultCost + 2, // 12
+		OTPTTL:            5 * time.Minute,
+		OTPMaxAttempts:    3,
+		OTPCooldown:       60 * time.Second,
+		MaxBodyBytes:      64 * 1024, // 64 KB
+		MinPasswordLength: 8,
+		Issuer:            "go-authkit",
+		DefaultRole:       "user",
 	}
+}
+
+// NewConfig initializes Config with production defaults and applies functional options.
+func NewConfig(jwtSecret string, opts ...Option) Config {
+	cfg := DefaultConfig(jwtSecret)
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+	return cfg
 }
 
 // Validate checks required fields and enforces security standards.
@@ -76,6 +155,15 @@ func (c *Config) Validate() error {
 	}
 	if c.OTPMaxAttempts <= 0 {
 		c.OTPMaxAttempts = 3
+	}
+	if c.OTPCooldown < 0 {
+		c.OTPCooldown = 60 * time.Second
+	}
+	if c.MaxBodyBytes <= 0 {
+		c.MaxBodyBytes = 64 * 1024
+	}
+	if c.MinPasswordLength <= 0 {
+		c.MinPasswordLength = 8
 	}
 	if c.Issuer == "" {
 		c.Issuer = "go-authkit"

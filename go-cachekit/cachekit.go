@@ -3,14 +3,24 @@ package cachekit
 import (
 	"context"
 	"encoding/json"
+	"sync/atomic"
 	"time"
 )
+
+// Stats reports cache hit and miss telemetry.
+type Stats struct {
+	Hits   uint64  `json:"hits"`
+	Misses uint64  `json:"misses"`
+	Ratio  float64 `json:"hit_ratio"`
+}
 
 // Engine is the central caching orchestrator.
 // Isme storage backend, singleflight coalescing, aur serialization logic encapsulate hoti hai.
 type Engine struct {
-	store Store
-	group *Group
+	store  Store
+	group  *Group
+	hits   atomic.Uint64
+	misses atomic.Uint64
 }
 
 // New creates and initializes a ready-to-use cachekit Engine.
@@ -29,9 +39,41 @@ func (e *Engine) Store() Store {
 	return e.store
 }
 
+// Stats returns a snapshot of hit/miss metrics and the hit ratio.
+func (e *Engine) Stats() Stats {
+	hits := e.hits.Load()
+	misses := e.misses.Load()
+	total := hits + misses
+	var ratio float64
+	if total > 0 {
+		ratio = float64(hits) / float64(total)
+	}
+	return Stats{
+		Hits:   hits,
+		Misses: misses,
+		Ratio:  ratio,
+	}
+}
+
+// RecordHit increments the hit counter.
+func (e *Engine) RecordHit() {
+	e.hits.Add(1)
+}
+
+// RecordMiss increments the miss counter.
+func (e *Engine) RecordMiss() {
+	e.misses.Add(1)
+}
+
 // GetBytes retrieves raw cached bytes.
 func (e *Engine) GetBytes(ctx context.Context, key string) ([]byte, error) {
-	return e.store.Get(ctx, key)
+	val, err := e.store.Get(ctx, key)
+	if err != nil {
+		e.RecordMiss()
+		return nil, err
+	}
+	e.RecordHit()
+	return val, nil
 }
 
 // SetBytes saves raw bytes with specified TTL.
@@ -59,6 +101,22 @@ func (e *Engine) Close() error {
 	return e.store.Close()
 }
 
+// JitterTTL adds a randomized delta (up to +-jitterPercent) to TTL to prevent synchronized expiration stampedes.
+// For example, JitterTTL(10*time.Minute, 0.1) produces durations between 9 and 11 minutes.
+func JitterTTL(ttl time.Duration, jitterPercent float64) time.Duration {
+	if jitterPercent <= 0 || ttl <= 0 {
+		return ttl
+	}
+	if jitterPercent > 1.0 {
+		jitterPercent = 1.0
+	}
+	delta := float64(ttl) * jitterPercent
+	minDuration := float64(ttl) - delta
+	spread := 2 * delta
+	r := float64(time.Now().UnixNano()%1000) / 1000.0
+	return time.Duration(minDuration + (r * spread))
+}
+
 // -------------------------------------------------------------------------
 // Generics-Powered High Level Functions
 // -------------------------------------------------------------------------
@@ -68,8 +126,10 @@ func Get[T any](ctx context.Context, e *Engine, key string) (T, error) {
 	var zero T
 	bytes, err := e.store.Get(ctx, key)
 	if err != nil {
+		e.RecordMiss()
 		return zero, err
 	}
+	e.RecordHit()
 
 	var val T
 	if err := json.Unmarshal(bytes, &val); err != nil {
@@ -107,9 +167,11 @@ func GetOrSet[T any](
 	if err == nil {
 		var cachedVal T
 		if err := json.Unmarshal(bytes, &cachedVal); err == nil {
+			e.RecordHit()
 			return cachedVal, nil
 		}
 	}
+	e.RecordMiss()
 
 	// 2. Slow path: Coalesce via Singleflight to prevent DB crash
 	result, err, _ := e.group.Do(key, func() (any, error) {

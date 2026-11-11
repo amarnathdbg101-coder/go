@@ -203,3 +203,44 @@ func TestSecGuard_ObservabilityHooks(t *testing.T) {
 		t.Fatal("OnExploitProbe hook failed")
 	}
 }
+
+func TestCORS_PreflightAndOrigins(t *testing.T) {
+	cors := NewCORS(CORSConfig{
+		AllowedOrigins:   []string{"https://example.com", "*.trusted.io"},
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+		MaxAge:           3600,
+	})
+
+	dummyHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler := cors.Handler(dummyHandler)
+
+	// Preflight OPTIONS request
+	preflightReq := httptest.NewRequest(http.MethodOptions, "/api/data", nil)
+	preflightReq.Header.Set("Origin", "https://sub.trusted.io")
+	preflightReq.Header.Set("Access-Control-Request-Method", "POST")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, preflightReq)
+
+	if rec.Code != http.StatusNoContent {
+		t.Errorf("expected 204 NoContent on preflight, got %d", rec.Code)
+	}
+	if rec.Header().Get("Access-Control-Allow-Origin") != "https://sub.trusted.io" {
+		t.Errorf("expected allowed origin header, got %s", rec.Header().Get("Access-Control-Allow-Origin"))
+	}
+
+	// Forbidden Origin
+	badReq := httptest.NewRequest(http.MethodGet, "/api/data", nil)
+	badReq.Header.Set("Origin", "https://malicious.evil")
+	recBad := httptest.NewRecorder()
+	handler.ServeHTTP(recBad, badReq)
+
+	if recBad.Code != http.StatusForbidden {
+		t.Errorf("expected 403 Forbidden for disallowed origin, got %d", recBad.Code)
+	}
+}
+

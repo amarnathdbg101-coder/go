@@ -2,7 +2,6 @@ package paginate
 
 import (
 	"strings"
-	"unicode"
 )
 
 // AllowedSortOrders strictly limits sort direction to prevent SQL injection.
@@ -54,12 +53,12 @@ func (p Params) Sanitize(defaultSort string, allowedCols ...string) Params {
 	}
 }
 
-// cleanIdentifier strips any character that is not alphanumeric, underscore, or period (for table.column).
+// cleanIdentifier strips any character that is not ASCII alphanumeric, underscore, or period (for table.column).
 // Yeh kisi bhi SQL injection attempt (quotes, spaces, semicolons, comments) ko completely strip kar deta hai.
 func cleanIdentifier(s string) string {
 	var sb strings.Builder
 	for _, r := range strings.TrimSpace(s) {
-		if unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_' || r == '.' {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' || r == '.' {
 			sb.WriteRune(r)
 		}
 	}

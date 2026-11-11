@@ -5,10 +5,23 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"regexp"
 	"sync"
 	"time"
 )
+
+var validTableNameRegex = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
+
+// ValidateTableName ensures the SQL table identifier contains only safe alphanumeric and underscore characters,
+// preventing dynamic SQL injection attacks.
+func ValidateTableName(name string) error {
+	if !validTableNameRegex.MatchString(name) {
+		return fmt.Errorf("%w: '%s'", ErrInvalidTableName, name)
+	}
+	return nil
+}
 
 // UserStore defines the persistence contract required by go-authkit.
 // Kisi bhi storage layer (PostgreSQL, MySQL, SQLite, MongoDB, or In-Memory) ke liye
@@ -135,15 +148,48 @@ type PostgresOptions struct {
 }
 
 // NewPostgresUserStore creates a new PostgreSQL store backed by standard *sql.DB.
+// Validates TableName against a strict identifier whitelist to prevent SQL injection.
 func NewPostgresUserStore(db *sql.DB, opts *PostgresOptions) *PostgresUserStore {
 	tableName := "users"
 	if opts != nil && opts.TableName != "" {
-		tableName = opts.TableName
+		if err := ValidateTableName(opts.TableName); err == nil {
+			tableName = opts.TableName
+		}
 	}
 	return &PostgresUserStore{
 		db:        db,
 		tableName: tableName,
 	}
+}
+
+// TableName returns the active database table name.
+func (s *PostgresUserStore) TableName() string {
+	return s.tableName
+}
+
+// InitSchema automatically provisions the users table and indexes in PostgreSQL if not already present.
+func (s *PostgresUserStore) InitSchema(ctx context.Context) error {
+	if s.db == nil {
+		return errors.New("authkit: postgres db connection is nil")
+	}
+
+	query := fmt.Sprintf(`
+		CREATE TABLE IF NOT EXISTS %s (
+			id VARCHAR(64) PRIMARY KEY,
+			email VARCHAR(255) UNIQUE NOT NULL,
+			password_hash VARCHAR(255) NOT NULL,
+			role VARCHAR(64) NOT NULL,
+			created_at TIMESTAMPTZ NOT NULL,
+			updated_at TIMESTAMPTZ NOT NULL
+		);
+		CREATE INDEX IF NOT EXISTS idx_%s_email ON %s(email);
+	`, s.tableName, s.tableName, s.tableName)
+
+	_, err := s.db.ExecContext(ctx, query)
+	if err != nil {
+		return fmt.Errorf("authkit: postgres init schema failed: %w", err)
+	}
+	return nil
 }
 
 // Create inserts a user into PostgreSQL.

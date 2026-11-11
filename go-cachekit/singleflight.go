@@ -48,14 +48,14 @@ func (g *Group) Do(key string, fn func() (any, error)) (v any, err error, shared
 	g.m[key] = c
 	g.mu.Unlock()
 
-	// Execute fetcher function
+	defer func() {
+		g.mu.Lock()
+		delete(g.m, key)
+		g.mu.Unlock()
+		c.wg.Done()
+	}()
+
+	// Execute fetcher function (panic-safe: defer ensures c.wg.Done() runs even if fn panics)
 	c.val, c.err = fn()
-	c.wg.Done()
-
-	// Cleanup key from active map so future requests can initiate a new fetch
-	g.mu.Lock()
-	delete(g.m, key)
-	g.mu.Unlock()
-
 	return c.val, c.err, false
 }

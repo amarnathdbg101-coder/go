@@ -2,6 +2,8 @@ package cachekit_test
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -303,6 +305,214 @@ func TestGetOrSetSWR_Flow(t *testing.T) {
 
 	if atomic.LoadInt64(&callCount) != 2 {
 		t.Errorf("expected async fetcher count 2 after SWR revalidation, got %d", atomic.LoadInt64(&callCount))
+	}
+}
+
+// -------------------------------------------------------------------------
+// 5. Hardened Edge Cases, Stats, and Mock Redis Tests
+// -------------------------------------------------------------------------
+
+func TestSingleflight_PanicSafety(t *testing.T) {
+	group := cachekit.NewGroup()
+
+	// 1. A call that panics
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic to bubble up")
+		}
+
+		// 2. Immediately call with same key after recover: MUST NOT DEADLOCK!
+		val, err, _ := group.Do("panic_key", func() (any, error) {
+			return "recovered", nil
+		})
+		if err != nil || val != "recovered" {
+			t.Fatalf("expected successful recovery call, got val=%v, err=%v", val, err)
+		}
+	}()
+
+	_, _, _ = group.Do("panic_key", func() (any, error) {
+		panic("database connection dropped unrecoverably!")
+	})
+}
+
+func TestEngine_Stats(t *testing.T) {
+	ctx := context.Background()
+	store := cachekit.NewMemoryStore()
+	defer store.Close()
+
+	engine, _ := cachekit.New(store)
+
+	// Hit & miss simulation
+	_ = cachekit.Set(ctx, engine, "hit_key", "hit_value", time.Minute)
+
+	// 1 Hit
+	_, err := cachekit.Get[string](ctx, engine, "hit_key")
+	if err != nil {
+		t.Fatalf("get failed: %v", err)
+	}
+
+	// 1 Miss
+	_, err = cachekit.Get[string](ctx, engine, "missing_key")
+	if err == nil {
+		t.Fatalf("expected miss")
+	}
+
+	stats := engine.Stats()
+	if stats.Hits != 1 {
+		t.Errorf("expected 1 hit, got %d", stats.Hits)
+	}
+	if stats.Misses != 1 {
+		t.Errorf("expected 1 miss, got %d", stats.Misses)
+	}
+	if stats.Ratio != 0.5 {
+		t.Errorf("expected ratio 0.5, got %f", stats.Ratio)
+	}
+}
+
+func TestJitterTTL(t *testing.T) {
+	baseTTL := 10 * time.Minute
+	jittered := cachekit.JitterTTL(baseTTL, 0.1)
+
+	// Jitter must be within [9m, 11m]
+	minExpected := 9 * time.Minute
+	maxExpected := 11 * time.Minute
+
+	if jittered < minExpected || jittered > maxExpected {
+		t.Fatalf("jittered TTL %v outside bounds [%v, %v]", jittered, minExpected, maxExpected)
+	}
+}
+
+func TestMemoryStore_ClearAndSize(t *testing.T) {
+	ctx := context.Background()
+	store := cachekit.NewMemoryStore(cachekit.MemoryOptions{CleanupInterval: 50 * time.Millisecond})
+	defer store.Close()
+
+	_ = store.Set(ctx, "k1", []byte("v1"), time.Minute)
+	_ = store.Set(ctx, "k2", []byte("v2"), time.Minute)
+
+	if store.Size() != 2 {
+		t.Fatalf("expected size 2, got %d", store.Size())
+	}
+
+	_ = store.Clear(ctx)
+	if store.Size() != 0 {
+		t.Fatalf("expected size 0 after clear, got %d", store.Size())
+	}
+}
+
+type mockRedisClient struct {
+	mu   sync.Mutex
+	data map[string][]byte
+}
+
+func newMockRedisClient() *mockRedisClient {
+	return &mockRedisClient{data: make(map[string][]byte)}
+}
+
+func (m *mockRedisClient) Get(ctx context.Context, key string) ([]byte, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	val, ok := m.data[key]
+	if !ok {
+		return nil, errors.New("redis: nil")
+	}
+	return val, nil
+}
+
+func (m *mockRedisClient) Set(ctx context.Context, key string, value []byte, ttl time.Duration) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.data[key] = value
+	return nil
+}
+
+func (m *mockRedisClient) Del(ctx context.Context, keys ...string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, k := range keys {
+		delete(m.data, k)
+	}
+	return nil
+}
+
+func (m *mockRedisClient) Keys(ctx context.Context, pattern string) ([]string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var res []string
+	prefix := strings.TrimSuffix(pattern, "*")
+	for k := range m.data {
+		if strings.HasPrefix(k, prefix) {
+			res = append(res, k)
+		}
+	}
+	return res, nil
+}
+
+func (m *mockRedisClient) FlushDB(ctx context.Context) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.data = make(map[string][]byte)
+	return nil
+}
+
+func TestRedisStore_MockClient(t *testing.T) {
+	ctx := context.Background()
+	mockClient := newMockRedisClient()
+	redisStore := cachekit.NewRedisStore(mockClient, "app")
+	defer redisStore.Close()
+
+	engine, err := cachekit.New(redisStore)
+	if err != nil {
+		t.Fatalf("failed to create engine: %v", err)
+	}
+
+	if engine.Store() != redisStore {
+		t.Errorf("store mismatch")
+	}
+
+	// Set & Get
+	err = engine.SetBytes(ctx, "session:1", []byte("user_data"), 5*time.Minute)
+	if err != nil {
+		t.Fatalf("set bytes failed: %v", err)
+	}
+
+	val, err := engine.GetBytes(ctx, "session:1")
+	if err != nil || string(val) != "user_data" {
+		t.Fatalf("get bytes failed: %v, val: %s", err, string(val))
+	}
+
+	// DeletePrefix
+	_ = engine.SetBytes(ctx, "order:1", []byte("1"), time.Minute)
+	_ = engine.SetBytes(ctx, "order:2", []byte("2"), time.Minute)
+	_ = engine.DeletePrefix(ctx, "order:")
+
+	_, err = engine.GetBytes(ctx, "order:1")
+	if err == nil {
+		t.Errorf("expected order:1 to be deleted")
+	}
+
+	// Clear
+	_ = engine.Clear(ctx)
+	_, err = engine.GetBytes(ctx, "session:1")
+	if err == nil {
+		t.Errorf("expected session:1 to be cleared")
+	}
+}
+
+func TestTypedCache_Delete(t *testing.T) {
+	ctx := context.Background()
+	store := cachekit.NewMemoryStore()
+	defer store.Close()
+
+	engine, _ := cachekit.New(store)
+	tc := cachekit.Typed[Product](engine)
+
+	_ = tc.Set(ctx, "prod:1", Product{ID: "1", Title: "Book"}, time.Minute)
+	_ = tc.Delete(ctx, "prod:1")
+
+	_, err := tc.Get(ctx, "prod:1")
+	if err == nil {
+		t.Errorf("expected cache miss after delete")
 	}
 }
 

@@ -1,5 +1,7 @@
 # go-countingbloom 🌸
 
+> 💡 **Consolidation Notice**: The Counting Bloom Filter with safe `Remove()` and saturation protection has been consolidated directly into [`go-bloom`](../go-bloom) via `gobloom.NewCounting(...)`. For new projects, prefer importing [`go-bloom`](../go-bloom) directly for both standard Bloom and Counting Bloom filters in a single package.
+
 > **Counting Bloom Filter with Deletion Support for Go (Go 1.23+).**  
 > Standard Bloom Filter me sabse bada limitation hota hai ki aap items ko delete nahi kar sakte (kyunki 1 bit ko 0 karne se dusre keys corrupt ho jaate hain). `go-countingbloom` 8-bit counters use karta hai jisse keys ko safely add (`Add`) aur remove (`Remove`) kiya ja sakta hai.
 

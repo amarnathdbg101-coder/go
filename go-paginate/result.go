@@ -39,3 +39,22 @@ func NewCursorPage[T any](data []T, nextCursor string, hasMore bool, limit int) 
 		},
 	}
 }
+
+// BuildCursorPage constructs a CursorPage[T] from a fetched slice of items.
+// Idiomatic usage: Query (limit + 1) items from the database.
+// If len(items) > limit, hasMore is set to true, the extra (limit+1)th item is trimmed,
+// and nextCursor is automatically generated using the provided cursorExtractor function.
+func BuildCursorPage[T any](items []T, limit int, cursorExtractor func(T) string) CursorPage[T] {
+	if len(items) == 0 {
+		return NewCursorPage([]T{}, "", false, limit)
+	}
+	if len(items) > limit {
+		trimmed := items[:limit]
+		var nextCursor string
+		if cursorExtractor != nil {
+			nextCursor = cursorExtractor(trimmed[limit-1])
+		}
+		return NewCursorPage(trimmed, nextCursor, true, limit)
+	}
+	return NewCursorPage(items, "", false, limit)
+}

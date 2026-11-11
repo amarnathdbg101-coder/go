@@ -1,5 +1,7 @@
 # go-envconfig ⚙️
 
+> 💡 **Consolidation Notice**: Struct tag unmarshaling has been consolidated directly into [`go-env`](../go-env) via `goenv.Unmarshal(&cfg)`. For new projects, prefer importing [`go-env`](../go-env) directly for complete `.env` file loading + struct unmarshaling in a single package.
+
 `go-envconfig` ek lightweight, zero-dependency environment variable unmarshaler hai Go structures ke liye. Ye 12-Factor App design pattern ko follow karta hai aur environment variables ko strongly-typed structs me safely parse karta hai using declarative struct tags.
 
 ---

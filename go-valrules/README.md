@@ -1,5 +1,7 @@
 # go-valrules 🛡️
 
+> 💡 **Consolidation Notice**: Standard enterprise validation rules (Luhn, PAN, GSTIN, IFSC, E.164, Indian Mobile, MAC, UUID, Base64, Hex) have been consolidated directly into [`go-validator`](../go-validator). For new projects, prefer importing [`go-validator`](../go-validator) directly for fluent validation + enterprise rules in a single package.
+
 > **Enterprise Format & Checksum Validation Suite for Go (Go 1.23+).**  
 > Payment gateways, KYC systems, taxation software, aur telecom applications ke liye standard rules: Luhn Checksum (Cards/IMEI), Indian GSTIN, PAN, IFSC, E.164 Phones, MAC, UUID, Hex, aur URLs.
 

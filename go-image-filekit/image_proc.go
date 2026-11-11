@@ -35,6 +35,16 @@ func DecodeImage(r io.Reader) (image.Image, string, error) {
 	return img, format, nil
 }
 
+// DecodeImageConfig decodes only image header metadata without decompressing pixel data.
+// Fast pre-flight check to detect format and prevent pixel-flood / decompression bomb attacks.
+func DecodeImageConfig(r io.Reader) (image.Config, string, error) {
+	cfg, format, err := image.DecodeConfig(r)
+	if err != nil {
+		return image.Config{}, "", fmt.Errorf("%w: %v", ErrInvalidImage, err)
+	}
+	return cfg, format, nil
+}
+
 // CalculateAspectFit calculates proportional target dimensions maintaining aspect ratio.
 // If original image is already smaller than bounds, original dimensions are preserved (no upscaling).
 func CalculateAspectFit(origW, origH, maxW, maxH int) (int, int) {
@@ -150,6 +160,10 @@ func CompressAndEncode(img image.Image, format string, jpegQuality int) ([]byte,
 		}
 	case "png":
 		if err := png.Encode(&buf, img); err != nil {
+			return nil, err
+		}
+	case "gif":
+		if err := gif.Encode(&buf, img, nil); err != nil {
 			return nil, err
 		}
 	default:

@@ -1,5 +1,7 @@
 # go-adaptivepool 🌊
 
+> 💡 **Consolidation Notice**: Dynamic elastic auto-scaling and idle worker eviction have been consolidated directly into [`go-workerpool`](../go-workerpool) via `goworkerpool.NewAdaptive(...)`. For new projects, prefer importing [`go-workerpool`](../go-workerpool) directly for both static bounded and elastic auto-scaling pools in a single package.
+
 > **Auto-Scaling Elastic Worker Pool with Idle Eviction for Go (Go 1.23+).**  
 > Static worker pools ya toh load aane par tasks queue me accumulate karte hain ya fir shuru se bohot saari idle goroutines chala kar RAM waste karte hain. `go-adaptivepool` baseline workers (`MinWorkers`) se start hota hai, load aane par dynamically `MaxWorkers` tak scale karta hai, aur idle hone par surplus goroutines ko automatically terminate karke RAM free karta hai.
 

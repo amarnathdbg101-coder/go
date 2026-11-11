@@ -148,7 +148,7 @@ func (r *ProductRepo) List(ctx context.Context, categoryID string, p paginate.Pa
 
 ## ♾️ Keyset / Cursor Pagination (For Infinite Scroll)
 
-When querying tables with millions of rows, `OFFSET 500000` becomes slow in PostgreSQL. Keyset cursor pagination eliminates this bottleneck:
+When querying tables with millions of rows, `OFFSET 500000` becomes slow in PostgreSQL. Keyset cursor pagination eliminates this bottleneck. `BuildCursorPage` automatically trims the $(N+1)^{\text{th}}$ row and derives `nextCursor`:
 
 ```go
 func handleInfiniteFeed(w http.ResponseWriter, r *http.Request) {
@@ -160,19 +160,26 @@ func handleInfiniteFeed(w http.ResponseWriter, r *http.Request) {
 	// Fetch 21 items (limit + 1) to determine if HasMore is true
 	items := fetchFeed(lastID, cursorParams.Limit + 1)
 
-	hasMore := len(items) > cursorParams.Limit
-	if hasMore {
-		items = items[:cursorParams.Limit] // trim extra item
-	}
+	// BuildCursorPage trims the 21st item, sets HasMore=true, and encodes nextCursor automatically!
+	response := paginate.BuildCursorPage(items, cursorParams.Limit, func(item FeedItem) string {
+		return paginate.EncodeCursor(item.ID)
+	})
 
-	var nextCursor string
-	if hasMore && len(items) > 0 {
-		nextCursor = paginate.EncodeCursor(items[len(items)-1].ID)
-	}
-
-	response := paginate.NewCursorPage(items, nextCursor, hasMore, cursorParams.Limit)
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
+```
+
+### PostgreSQL Composite Cursor Query Helper
+
+For time-ordered feeds (`created_at DESC, id DESC`), use `CompositeCursorWhereClause`:
+
+```go
+whereClause, orderClause, args := paginate.CompositeCursorWhereClause(
+    "created_at", "id", lastCreatedAt, lastID, "DESC", 1,
+)
+// Generates: ("created_at", "id") < ($1, $2)
+// Order:    ORDER BY "created_at" DESC, "id" DESC
 ```
 
 ---

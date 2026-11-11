@@ -138,3 +138,56 @@ func TestDoWithData(t *testing.T) {
 		t.Fatalf("expected SUCCESS_DATA, got %s", res)
 	}
 }
+
+func TestBackoff_StrategiesAndSleep(t *testing.T) {
+	// Exponential
+	exp := Exponential(10*time.Millisecond, 100*time.Millisecond, 2.0)
+	d0 := exp.NextDelay(0)
+	d1 := exp.NextDelay(1)
+	if d1 < d0 {
+		t.Errorf("expected d1 >= d0, got d0=%v, d1=%v", d0, d1)
+	}
+
+	// Decorrelated
+	decor := Decorrelated(10*time.Millisecond, 100*time.Millisecond)
+	dec0 := decor.NextDelay(0)
+	if dec0 < 10*time.Millisecond || dec0 > 100*time.Millisecond {
+		t.Errorf("decorrelated out of bounds: %v", dec0)
+	}
+
+	// Linear
+	lin := Linear(5*time.Millisecond, 5*time.Millisecond, 50*time.Millisecond)
+	if lin.NextDelay(2) != 15*time.Millisecond {
+		t.Errorf("expected 15ms, got %v", lin.NextDelay(2))
+	}
+
+	// Backoff.Sleep with quick success
+	ctx := context.Background()
+	if err := exp.Sleep(ctx, 0); err != nil {
+		t.Errorf("expected nil error on Sleep: %v", err)
+	}
+
+	// Backoff.Sleep with canceled context
+	canceledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err := exp.Sleep(canceledCtx, 1); !errors.Is(err, context.Canceled) {
+		t.Errorf("expected context.Canceled, got %v", err)
+	}
+
+	// Jitter coverage
+	jitFull := ApplyJitter(100*time.Millisecond, FullJitter)
+	if jitFull > 100*time.Millisecond {
+		t.Errorf("full jitter exceeded base: %v", jitFull)
+	}
+
+	jitEqual := ApplyJitter(100*time.Millisecond, EqualJitter)
+	if jitEqual < 50*time.Millisecond || jitEqual > 100*time.Millisecond {
+		t.Errorf("equal jitter out of bounds: %v", jitEqual)
+	}
+
+	jitDec := ApplyJitter(100*time.Millisecond, DecorrelatedJitter)
+	if jitDec < 50*time.Millisecond || jitDec > 150*time.Millisecond {
+		t.Errorf("decorrelated jitter out of bounds: %v", jitDec)
+	}
+}
+

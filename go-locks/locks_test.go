@@ -1,6 +1,8 @@
 package golocks
 
 import (
+	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -118,4 +120,127 @@ func TestKeyToInt64(t *testing.T) {
 	if locker.LockID() == 0 {
 		t.Fatal("expected non-zero lock ID")
 	}
+}
+
+func TestDistributedLocker_AcquireAndRelease(t *testing.T) {
+	locker := NewDistributedLocker(NewMemoryDriver())
+	ctx := context.Background()
+
+	lock, err := locker.Acquire(ctx, "resource_1", WithDistLockTTL(1*time.Second))
+	if err != nil {
+		t.Fatalf("failed to acquire lock: %v", err)
+	}
+
+	if lock.Key() != "resource_1" {
+		t.Errorf("unexpected key: %s", lock.Key())
+	}
+	if lock.FencingToken() == 0 {
+		t.Errorf("fencing token must be non-zero")
+	}
+
+	if err := lock.Release(); err != nil {
+		t.Fatalf("failed to release lock: %v", err)
+	}
+
+	// Double release should return ErrLockReleased
+	if err := lock.Release(); !errors.Is(err, ErrLockReleased) {
+		t.Fatalf("expected ErrLockReleased, got %v", err)
+	}
+}
+
+func TestDistributedLocker_MutualExclusion(t *testing.T) {
+	locker := NewDistributedLocker(NewMemoryDriver())
+	ctx := context.Background()
+
+	lock1, err := locker.Acquire(ctx, "exclusive_key", WithDistLockTTL(1*time.Second), WithDistLockOwner("worker_A"))
+	if err != nil {
+		t.Fatalf("worker A failed to acquire lock: %v", err)
+	}
+	defer lock1.Release()
+
+	// Worker B attempts to acquire same key -> must fail immediately
+	_, err2 := locker.Acquire(ctx, "exclusive_key", WithDistLockTTL(1*time.Second), WithDistLockOwner("worker_B"))
+	if !errors.Is(err2, ErrLockNotAcquired) {
+		t.Fatalf("expected ErrLockNotAcquired for worker B, got %v", err2)
+	}
+}
+
+func TestDistributedLocker_MonotonicFencingTokens(t *testing.T) {
+	locker := NewDistributedLocker(NewMemoryDriver())
+	ctx := context.Background()
+
+	lock1, err := locker.Acquire(ctx, "shared_job", WithDistLockTTL(1*time.Second))
+	if err != nil {
+		t.Fatalf("lock 1 failed: %v", err)
+	}
+	token1 := lock1.FencingToken()
+	_ = lock1.Release()
+
+	lock2, err := locker.Acquire(ctx, "shared_job", WithDistLockTTL(1*time.Second))
+	if err != nil {
+		t.Fatalf("lock 2 failed: %v", err)
+	}
+	token2 := lock2.FencingToken()
+	_ = lock2.Release()
+
+	if token2 <= token1 {
+		t.Fatalf("fencing tokens must be strictly monotonic: token1=%d token2=%d", token1, token2)
+	}
+}
+
+func TestDistributedLocker_AutoHeartbeatRenewal(t *testing.T) {
+	locker := NewDistributedLocker(NewMemoryDriver())
+	ctx := context.Background()
+
+	// TTL is 30ms, but AutoRenew refreshes it every 10ms
+	lock, err := locker.Acquire(ctx, "long_task", WithDistLockTTL(30*time.Millisecond), WithDistLockAutoRenew(true))
+	if err != nil {
+		t.Fatalf("failed to acquire lock: %v", err)
+	}
+	defer lock.Release()
+
+	// Sleep for 70ms (well past the 30ms initial TTL)
+	time.Sleep(70 * time.Millisecond)
+
+	// Another worker should STILL not be able to acquire because heartbeat extended it!
+	_, err2 := locker.Acquire(ctx, "long_task", WithDistLockOwner("worker_other"))
+	if !errors.Is(err2, ErrLockNotAcquired) {
+		t.Fatalf("expected lock to remain held due to heartbeat renewal, got: %v", err2)
+	}
+}
+
+func TestDistributedLocker_RetryAcquire(t *testing.T) {
+	locker := NewDistributedLocker(NewMemoryDriver())
+	ctx := context.Background()
+
+	lock1, _ := locker.Acquire(ctx, "retry_key", WithDistLockTTL(1*time.Second), WithDistLockOwner("first"))
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	var lock2 *DistLock
+	var err2 error
+
+	go func() {
+		defer wg.Done()
+		// Will wait up to 500ms with 10ms polls
+		lock2, err2 = locker.Acquire(ctx, "retry_key",
+			WithDistLockOwner("second"),
+			WithDistLockRetry(500*time.Millisecond, 10*time.Millisecond),
+		)
+	}()
+
+	// Release lock1 after 50ms
+	time.Sleep(50 * time.Millisecond)
+	_ = lock1.Release()
+
+	wg.Wait()
+
+	if err2 != nil {
+		t.Fatalf("expected second worker to acquire after release, got %v", err2)
+	}
+	if lock2 == nil || lock2.Owner() != "second" {
+		t.Fatalf("unexpected lock2 state: %+v", lock2)
+	}
+	_ = lock2.Release()
 }

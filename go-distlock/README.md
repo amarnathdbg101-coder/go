@@ -1,5 +1,8 @@
 # go-distlock 🔐
 
+> [!NOTE]
+> **Consolidation Notice**: Yeh package ab full distributed lease capabilities (Monotonic Fencing Tokens, Auto-Heartbeat Lease Extension, aur Pluggable Drivers) ke sath **[`go-locks`](../go-locks)** me consolidate ho chuka hai. Naye projects ke liye unified `go-locks` ka use recommend kiya jata hai. Existing code backward-compatible rahega.
+
 > **Distributed Locking with Monotonically Increasing Fencing Tokens and Auto-Heartbeat Lease Extension for Go (Go 1.23+).**  
 > Solves the classic Martin Kleppmann distributed lock anomaly: prevents split-brain writes during GC pauses and network partitions via monotonic fencing tokens and automatic lease renewal.
 

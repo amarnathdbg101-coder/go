@@ -1,5 +1,7 @@
 # go-delayqueue ⏱️
 
+> 💡 **Consolidation Notice**: Delayed task scheduling has been consolidated directly into [`go-taskqueue`](../go-taskqueue) via `engine.EnqueueAfter(...)`. For new projects, prefer importing [`go-taskqueue`](../go-taskqueue) directly for both immediate asynchronous job queues and delayed task execution in a single package.
+
 > **Production-Grade Delayed Job Scheduler, Hierarchical Timer, Exponential Retries, and Dead-Letter Queue (DLQ) for Go (Go 1.23+).**  
 > Schedule delayed actions (e.g. order auto-cancellation after 15m, abandoned cart reminders after 2h, webhook backoff retries) with pluggable persistence and zero external dependencies.
 

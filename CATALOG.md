@@ -5,6 +5,21 @@
 
 ---
 
+## 📂 Categorized Domain Suites (Zero-Bloat Architecture)
+
+To keep every Go service lightweight while maintaining instant access to common features, libraries are organized into **8 Domain Work Suites**:
+
+1. **🔒 Security, Auth & Identity Suite**: [`go-authkit`](./go-authkit), [`go-jwt`](./go-jwt), [`go-otp`](./go-otp), [`go-crypto`](./go-crypto), [`go-cookie`](./go-cookie), [`go-mask`](./go-mask), [`go-idgen`](./go-idgen), [`go-password`](./go-password), [`go-secguard`](./go-secguard), [`go-keyrotator`](./go-keyrotator), [`go-tamperseal`](./go-tamperseal), [`go-urlsigner`](./go-urlsigner), [`go-secureid`](./go-secureid)
+2. **🌐 Network, Resilience & Traffic Suite**: [`go-ratelimit`](./go-ratelimit), [`go-httpclient`](./go-httpclient), [`go-circuitbreaker`](./go-circuitbreaker), [`go-retry`](./go-retry), [`go-healthcheck`](./go-healthcheck), [`go-ipkit`](./go-ipkit), [`go-cors`](./go-cors), [`go-webhook`](./go-webhook), [`go-shutdown`](./go-shutdown), [`go-adaptivelimit`](./go-adaptivelimit), [`go-bulkhead`](./go-bulkhead), [`go-wshub`](./go-wshub), [`go-sse`](./go-sse)
+3. **🗄️ Data Caching, SQL & Validation Suite**: [`go-cachekit`](./go-cachekit), [`go-paginate`](./go-paginate), [`go-sqlbuilder`](./go-sqlbuilder), [`go-validator`](./go-validator), [`go-sanitize`](./go-sanitize), [`go-slug`](./go-slug), [`go-env`](./go-env), [`go-sqlscan`](./go-sqlscan), [`go-queryfilter`](./go-queryfilter), [`go-idempotency`](./go-idempotency), [`go-hotconfig`](./go-hotconfig), [`go-jsonpath`](./go-jsonpath)
+4. **⚡ Async Workflows, Workers & Events Suite**: [`go-taskqueue`](./go-taskqueue), [`go-workerpool`](./go-workerpool), [`go-events`](./go-events), [`go-pubsub`](./go-pubsub), [`go-stream`](./go-stream), [`go-pipeline`](./go-pipeline), [`go-cron`](./go-cron), [`go-delayqueue`](./go-delayqueue), [`go-saga`](./go-saga), [`go-disruptor`](./go-disruptor), [`go-adaptivepool`](./go-adaptivepool)
+5. **📄 Documents, Media & Files Suite**: [`go-image-filekit`](./go-image-filekit), [`go-gopdf-pdfkit`](./go-gopdf-pdfkit), [`go-chromedp-pdfkit`](./go-chromedp-pdfkit), [`go-csvkit`](./go-csvkit), [`go-compress`](./go-compress), [`go-mimekit`](./go-mimekit), [`go-imagefx`](./go-imagefx), [`go-studiocomp`](./go-studiocomp), [`go-imghash`](./go-imghash), [`go-jsonstream`](./go-jsonstream)
+6. **📊 Observability, Metrics & Audit Suite**: [`go-auditlog`](./go-auditlog), [`go-metrics`](./go-metrics), [`go-contextkit`](./go-contextkit), [`go-migrator`](./go-migrator), [`go-sysinfo`](./go-sysinfo), [`go-stopwatch`](./go-stopwatch), [`go-colorlog`](./go-colorlog), [`go-w3ctrace`](./go-w3ctrace), [`go-slidingstats`](./go-slidingstats), [`go-pgexplain`](./go-pgexplain)
+7. **🚀 High-Speed Data Structures & Algorithms Suite**: [`go-bloom`](./go-bloom), [`go-locks`](./go-locks), [`go-lru`](./go-lru), [`go-lfu`](./go-lfu), [`go-tinylfu`](./go-tinylfu), [`go-bitmap`](./go-bitmap), [`go-btree`](./go-btree), [`go-radix`](./go-radix), [`go-rbtree`](./go-rbtree), [`go-sortedset`](./go-sortedset), [`go-ringbuffer`](./go-ringbuffer), [`go-concurrentmap`](./go-concurrentmap), [`go-bm25`](./go-bm25), [`go-cuckoofilter`](./go-cuckoofilter)
+8. **🛒 E-Commerce & Retail Business Suite**: [`go-money`](./go-money), [`go-ledger`](./go-ledger), [`go-reservation`](./go-reservation), [`go-retailtaxo`](./go-retailtaxo), [`go-parchi`](./go-parchi), [`go-escpos`](./go-escpos), [`go-pricing`](./go-pricing), [`go-bizhours`](./go-bizhours), [`go-hinglish`](./go-hinglish), [`go-geodistance`](./go-geodistance)
+
+---
+
 ## 🏛️ Comprehensive Library Matrix
 
 | # | Library | Path | Primary Responsibilities | Zero-Dep? | Tests |

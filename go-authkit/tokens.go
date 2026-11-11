@@ -1,6 +1,7 @@
 package authkit
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -11,12 +12,15 @@ import (
 // GenerateToken creates a signed JWT string for a specific token type ("access" or "refresh").
 func (e *Engine) GenerateToken(user *User, tokenType string, ttl time.Duration) (string, error) {
 	now := time.Now()
+	tokenID := generateUniqueID()
+
 	claims := Claims{
 		UserID:    user.ID,
 		Email:     user.Email,
 		Role:      user.Role,
 		TokenType: tokenType,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        tokenID,
 			Issuer:    e.cfg.Issuer,
 			Subject:   user.ID,
 			IssuedAt:  jwt.NewNumericDate(now),
@@ -54,10 +58,15 @@ func (e *Engine) GenerateTokenPair(user *User) (*AuthResponse, error) {
 	}, nil
 }
 
-// ValidateToken parses, verifies HMAC signature, checks expiry, and ensures expected token type.
+// ValidateToken parses, verifies HMAC signature, checks expiry, validates revocation, and ensures expected token type.
 func (e *Engine) ValidateToken(tokenStr string, expectedType string) (*Claims, error) {
+	return e.ValidateTokenWithContext(context.Background(), tokenStr, expectedType)
+}
+
+// ValidateTokenWithContext parses and verifies JWT while checking against the revocation store using the provided context.
+func (e *Engine) ValidateTokenWithContext(ctx context.Context, tokenStr string, expectedType string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(t *jwt.Token) (interface{}, error) {
-		// Enforce HMAC algorithm to prevent alg: "none" or asymmetric confusion attacks
+		// Enforce HMAC algorithm to prevent alg: "none" or asymmetric key confusion attacks
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
@@ -79,6 +88,14 @@ func (e *Engine) ValidateToken(tokenStr string, expectedType string) (*Claims, e
 	// Token type validation (access vs refresh isolation)
 	if expectedType != "" && claims.TokenType != expectedType {
 		return nil, ErrInvalidTokenType
+	}
+
+	// Check if this token was revoked (Logout or rotated Refresh Token)
+	if e.revocation != nil && claims.ID != "" {
+		revoked, revErr := e.revocation.IsRevoked(ctx, claims.ID)
+		if revErr == nil && revoked {
+			return nil, ErrTokenRevoked
+		}
 	}
 
 	return claims, nil

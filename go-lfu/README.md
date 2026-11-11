@@ -1,5 +1,7 @@
 # go-lfu ⚡
 
+> 💡 **Consolidation Notice**: True $O(1)$ LFU cache has been consolidated directly into [`go-lru`](../go-lru) via `golru.NewLFU(...)`. For new projects, prefer importing [`go-lru`](../go-lru) directly for both LRU and LFU generic caches in a single package.
+
 `go-lfu` ek ultra-fast, thread-safe $O(1)$ Least Frequently Used (LFU) cache library hai Go ke liye. LRU ke opposite, ye access frequency track karta hai taaki long-term popular items (e-commerce hot products, search keywords, auth tokens) temporary request spikes ke dauraan evict hone se protected rahein.
 
 ---

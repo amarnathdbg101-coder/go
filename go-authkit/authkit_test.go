@@ -3,7 +3,10 @@ package authkit_test
 import (
 	"bytes"
 	"context"
+	"database/sql"
+	"database/sql/driver"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -580,5 +583,376 @@ func TestPostgresUserStore_Constructor(t *testing.T) {
 	if pgStore == nil {
 		t.Fatalf("expected non-nil PostgresUserStore")
 	}
+	if pgStore.TableName() != "custom_users" {
+		t.Errorf("expected custom_users, got %s", pgStore.TableName())
+	}
+
+	// Schema init check with nil db returns error
+	if err := pgStore.InitSchema(context.Background()); err == nil {
+		t.Errorf("expected error when db is nil")
+	}
+
+	// Table name validation
+	if err := authkit.ValidateTableName("users"); err != nil {
+		t.Errorf("expected valid table name: %v", err)
+	}
+	if err := authkit.ValidateTableName("users; DROP TABLE users;"); err == nil {
+		t.Errorf("expected error for SQL injection payload in table name")
+	}
 }
+
+// -------------------------------------------------------------------------
+// 10. Security & Hardening Tests (DoS Body Limit, OTP Cooldown, Revocation)
+// -------------------------------------------------------------------------
+
+func TestMaxBodyLimit_PayloadTooLarge(t *testing.T) {
+	engine, _, _ := setupTestEngine(t)
+	handler := engine.Routes()
+
+	// Create payload larger than MaxBodyBytes (64KB default)
+	largeData := make([]byte, 70*1024)
+	for i := range largeData {
+		largeData[i] = 'A'
+	}
+	largePayload, _ := json.Marshal(map[string]string{
+		"email":    "test@example.com",
+		"password": string(largeData),
+	})
+
+	req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(largePayload))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusRequestEntityTooLarge {
+		t.Errorf("expected 413 StatusRequestEntityTooLarge for oversized payload, got %d", w.Code)
+	}
+}
+
+func TestOTP_Cooldown(t *testing.T) {
+	engine, store, _ := setupTestEngine(t)
+	handler := engine.Routes()
+
+	email := "cooldown@example.com"
+	_ = store.Create(context.Background(), &authkit.User{
+		ID:           "cool_1",
+		Email:        email,
+		PasswordHash: "dummy",
+	})
+
+	// Request 1: Should succeed
+	body1, _ := json.Marshal(authkit.ForgotPasswordRequest{Email: email})
+	req1 := httptest.NewRequest(http.MethodPost, "/forgot-password", bytes.NewReader(body1))
+	req1.Header.Set("Content-Type", "application/json")
+	w1 := httptest.NewRecorder()
+	handler.ServeHTTP(w1, req1)
+
+	if w1.Code != http.StatusOK {
+		t.Fatalf("request 1: expected 200 OK, got %d: %s", w1.Code, w1.Body.String())
+	}
+
+	// Request 2 immediately within cooldown (60s): Should return 429 Too Many Requests
+	body2, _ := json.Marshal(authkit.ForgotPasswordRequest{Email: email})
+	req2 := httptest.NewRequest(http.MethodPost, "/forgot-password", bytes.NewReader(body2))
+	req2.Header.Set("Content-Type", "application/json")
+	w2 := httptest.NewRecorder()
+	handler.ServeHTTP(w2, req2)
+
+	if w2.Code != http.StatusTooManyRequests {
+		t.Errorf("request 2: expected 429 Too Many Requests due to cooldown, got %d: %s", w2.Code, w2.Body.String())
+	}
+}
+
+func TestLogout_And_TokenRevocation(t *testing.T) {
+	engine, _, _ := setupTestEngine(t)
+	handler := engine.Routes()
+
+	// Register user
+	regBody, _ := json.Marshal(authkit.RegisterRequest{
+		Email:    "logout_user@example.com",
+		Password: "SecurePassword123!",
+	})
+	regReq := httptest.NewRequest(http.MethodPost, "/register", bytes.NewReader(regBody))
+	regReq.Header.Set("Content-Type", "application/json")
+	regW := httptest.NewRecorder()
+	handler.ServeHTTP(regW, regReq)
+
+	var authResp authkit.AuthResponse
+	_ = json.Unmarshal(regW.Body.Bytes(), &authResp)
+
+	// Call /logout with refresh token
+	logoutBody, _ := json.Marshal(authkit.LogoutRequest{
+		RefreshToken: authResp.RefreshToken,
+	})
+	logoutReq := httptest.NewRequest(http.MethodPost, "/logout", bytes.NewReader(logoutBody))
+	logoutReq.Header.Set("Content-Type", "application/json")
+	logoutW := httptest.NewRecorder()
+	handler.ServeHTTP(logoutW, logoutReq)
+
+	if logoutW.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK for logout, got %d", logoutW.Code)
+	}
+
+	// Attempting to refresh using the revoked token must FAIL
+	refreshBody, _ := json.Marshal(authkit.RefreshTokenRequest{
+		RefreshToken: authResp.RefreshToken,
+	})
+	refreshReq := httptest.NewRequest(http.MethodPost, "/refresh", bytes.NewReader(refreshBody))
+	refreshReq.Header.Set("Content-Type", "application/json")
+	refreshW := httptest.NewRecorder()
+	handler.ServeHTTP(refreshW, refreshReq)
+
+	if refreshW.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401 Unauthorized for revoked refresh token, got %d: %s", refreshW.Code, refreshW.Body.String())
+	}
+}
+
+func TestRefreshToken_SingleUseRotation(t *testing.T) {
+	engine, _, _ := setupTestEngine(t)
+	handler := engine.Routes()
+
+	// Register
+	regBody, _ := json.Marshal(authkit.RegisterRequest{
+		Email:    "rotation@example.com",
+		Password: "SecurePassword123!",
+	})
+	regReq := httptest.NewRequest(http.MethodPost, "/register", bytes.NewReader(regBody))
+	regReq.Header.Set("Content-Type", "application/json")
+	regW := httptest.NewRecorder()
+	handler.ServeHTTP(regW, regReq)
+
+	var authResp authkit.AuthResponse
+	_ = json.Unmarshal(regW.Body.Bytes(), &authResp)
+
+	// Refresh 1: Should SUCCEED
+	refreshBody, _ := json.Marshal(authkit.RefreshTokenRequest{
+		RefreshToken: authResp.RefreshToken,
+	})
+	refreshReq := httptest.NewRequest(http.MethodPost, "/refresh", bytes.NewReader(refreshBody))
+	refreshReq.Header.Set("Content-Type", "application/json")
+	refreshW := httptest.NewRecorder()
+	handler.ServeHTTP(refreshW, refreshReq)
+
+	if refreshW.Code != http.StatusOK {
+		t.Fatalf("refresh 1: expected 200 OK, got %d: %s", refreshW.Code, refreshW.Body.String())
+	}
+
+	// Refresh 2 with same OLD token (Replay attack): Should FAIL
+	refreshReq2 := httptest.NewRequest(http.MethodPost, "/refresh", bytes.NewReader(refreshBody))
+	refreshReq2.Header.Set("Content-Type", "application/json")
+	refreshW2 := httptest.NewRecorder()
+	handler.ServeHTTP(refreshW2, refreshReq2)
+
+	if refreshW2.Code != http.StatusUnauthorized {
+		t.Errorf("refresh 2 (replay): expected 401 Unauthorized, got %d: %s", refreshW2.Code, refreshW2.Body.String())
+	}
+}
+
+func TestFunctionalOptions_And_NewConfig(t *testing.T) {
+	cfg := authkit.NewConfig(
+		"secret-key-that-is-at-least-32-bytes-long",
+		authkit.WithAccessTokenTTL(10*time.Minute),
+		authkit.WithRefreshTokenTTL(48*time.Hour),
+		authkit.WithBcryptCost(11),
+		authkit.WithOTPTTL(3*time.Minute),
+		authkit.WithOTPMaxAttempts(5),
+		authkit.WithOTPCooldown(30*time.Second),
+		authkit.WithMaxBodyBytes(128*1024),
+		authkit.WithMinPasswordLength(10),
+		authkit.WithIssuer("custom-issuer"),
+		authkit.WithDefaultRole("member"),
+	)
+
+	if cfg.AccessTokenTTL != 10*time.Minute {
+		t.Errorf("expected 10m AccessTokenTTL")
+	}
+	if cfg.RefreshTokenTTL != 48*time.Hour {
+		t.Errorf("expected 48h RefreshTokenTTL")
+	}
+	if cfg.BcryptCost != 11 {
+		t.Errorf("expected BcryptCost 11")
+	}
+	if cfg.OTPTTL != 3*time.Minute {
+		t.Errorf("expected OTPTTL 3m")
+	}
+	if cfg.OTPMaxAttempts != 5 {
+		t.Errorf("expected OTPMaxAttempts 5")
+	}
+	if cfg.OTPCooldown != 30*time.Second {
+		t.Errorf("expected OTPCooldown 30s")
+	}
+	if cfg.MaxBodyBytes != 128*1024 {
+		t.Errorf("expected MaxBodyBytes 128KB")
+	}
+	if cfg.MinPasswordLength != 10 {
+		t.Errorf("expected MinPasswordLength 10")
+	}
+	if cfg.Issuer != "custom-issuer" {
+		t.Errorf("expected custom-issuer")
+	}
+	if cfg.DefaultRole != "member" {
+		t.Errorf("expected member")
+	}
+}
+
+// -------------------------------------------------------------------------
+// 11. Zero-Dependency Mock SQL Driver for PostgresUserStore Testing
+// -------------------------------------------------------------------------
+
+type mockDriver struct{}
+
+func (d *mockDriver) Open(name string) (driver.Conn, error) {
+	return &mockConn{}, nil
+}
+
+type mockConn struct{}
+
+func (c *mockConn) Prepare(query string) (driver.Stmt, error) {
+	return &mockStmt{query: query}, nil
+}
+func (c *mockConn) Close() error { return nil }
+func (c *mockConn) Begin() (driver.Tx, error) { return &mockTx{}, nil }
+
+type mockTx struct{}
+
+func (t *mockTx) Commit() error   { return nil }
+func (t *mockTx) Rollback() error { return nil }
+
+type mockStmt struct {
+	query string
+}
+
+func (s *mockStmt) Close() error { return nil }
+func (s *mockStmt) NumInput() int { return -1 }
+func (s *mockStmt) Exec(args []driver.Value) (driver.Result, error) {
+	return driver.RowsAffected(1), nil
+}
+func (s *mockStmt) Query(args []driver.Value) (driver.Rows, error) {
+	return &mockRows{index: 0}, nil
+}
+
+type mockRows struct {
+	index int
+}
+
+func (r *mockRows) Columns() []string {
+	return []string{"id", "email", "password_hash", "role", "created_at", "updated_at"}
+}
+func (r *mockRows) Close() error { return nil }
+func (r *mockRows) Next(dest []driver.Value) error {
+	if r.index >= 1 {
+		return io.EOF
+	}
+	r.index++
+	now := time.Now()
+	dest[0] = "usr_123"
+	dest[1] = "mock@example.com"
+	dest[2] = "$2a$12$dummyhash"
+	dest[3] = "user"
+	dest[4] = now
+	dest[5] = now
+	return nil
+}
+
+func init() {
+	sql.Register("mock_postgres", &mockDriver{})
+}
+
+func TestPostgresUserStore_Operations(t *testing.T) {
+	db, err := sql.Open("mock_postgres", "")
+	if err != nil {
+		t.Fatalf("failed to open mock db: %v", err)
+	}
+	defer db.Close()
+
+	store := authkit.NewPostgresUserStore(db, &authkit.PostgresOptions{TableName: "users"})
+
+	ctx := context.Background()
+
+	// InitSchema
+	if err := store.InitSchema(ctx); err != nil {
+		t.Errorf("InitSchema failed: %v", err)
+	}
+
+	// Create
+	testUser := &authkit.User{
+		Email:        "mock@example.com",
+		PasswordHash: "secret_hash",
+		Role:         "user",
+	}
+	if err := store.Create(ctx, testUser); err != nil {
+		t.Errorf("Create failed: %v", err)
+	}
+
+	// GetByEmail
+	u, err := store.GetByEmail(ctx, "mock@example.com")
+	if err != nil {
+		t.Errorf("GetByEmail failed: %v", err)
+	}
+	if u == nil || u.Email != "mock@example.com" {
+		t.Errorf("expected user with mock@example.com")
+	}
+
+	// GetByID
+	uID, err := store.GetByID(ctx, "usr_123")
+	if err != nil {
+		t.Errorf("GetByID failed: %v", err)
+	}
+	if uID == nil || uID.ID != "usr_123" {
+		t.Errorf("expected user with usr_123")
+	}
+
+	// UpdatePassword
+	if err := store.UpdatePassword(ctx, "usr_123", "new_hash"); err != nil {
+		t.Errorf("UpdatePassword failed: %v", err)
+	}
+}
+
+func TestEngine_SetRevocationStore(t *testing.T) {
+	engine, _, _ := setupTestEngine(t)
+	customRev := authkit.NewMemoryRevocationStore()
+	engine.SetRevocationStore(customRev)
+	if engine.Revocation() != customRev {
+		t.Errorf("expected custom revocation store")
+	}
+}
+
+// -------------------------------------------------------------------------
+// 12. Benchmarks
+// -------------------------------------------------------------------------
+
+func BenchmarkHashPassword(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = authkit.HashPassword("TestPassword123!", 10)
+	}
+}
+
+func BenchmarkCheckPassword(b *testing.B) {
+	hash, _ := authkit.HashPassword("TestPassword123!", 10)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = authkit.CheckPassword("TestPassword123!", hash)
+	}
+}
+
+func BenchmarkGenerateToken(b *testing.B) {
+	store := authkit.NewMemoryUserStore()
+	cfg := authkit.DefaultConfig("super-secret-key-that-is-at-least-32-bytes-long!")
+	engine, _ := authkit.New(store, cfg)
+	defer engine.Close()
+
+	user := &authkit.User{ID: "usr_1", Email: "test@example.com", Role: "user"}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = engine.GenerateToken(user, "access", 15*time.Minute)
+	}
+}
+
+func BenchmarkGenerateCodeOTP(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = authkit.GenerateCode()
+	}
+}
+
+
 

@@ -1,5 +1,7 @@
 # go-cors 🌐
 
+> 💡 **Consolidation Notice**: Zero-allocation CORS middleware has been consolidated directly into [`go-secguard`](../go-secguard) via `secguard.NewCORS(...)`. For new projects, prefer importing [`go-secguard`](../go-secguard) directly for both WAF/Security Headers and CORS handling in a single security firewall package.
+
 Zero-allocation, high-speed CORS middleware with preflight short-circuiting, wildcard subdomain matching, and credentials support for Flutter Web and React SPAs. Adheres strictly to the [Master Library Blueprint](../BLUEPRINT.md).
 
 ---

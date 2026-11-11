@@ -63,6 +63,11 @@ type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+// LogoutRequest holds payload for revoking a refresh token session.
+type LogoutRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
 // ForgotPasswordRequest holds the user's email to initiate OTP generation.
 type ForgotPasswordRequest struct {
 	Email string `json:"email"`

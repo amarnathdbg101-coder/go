@@ -24,6 +24,7 @@ type Config struct {
 	ResizeMaxWidth  int      // Optional max width for image resizing (0 = no resize)
 	ResizeMaxHeight int      // Optional max height for image resizing (0 = no resize)
 	JPEGQuality     int      // JPEG compression quality 1-100 (default: 85)
+	MaxDimension    int      // Maximum allowed pixel dimension (width or height) to prevent decompression bombs (default: 10,000)
 }
 
 // Result contains complete metadata of an uploaded and processed file.
@@ -89,6 +90,15 @@ func WithJPEGQuality(quality int) Option {
 	}
 }
 
+// WithMaxDimension configures the maximum permitted image pixel dimension (width or height). Default: 10,000.
+func WithMaxDimension(dim int) Option {
+	return func(c *Config) {
+		if dim > 0 {
+			c.MaxDimension = dim
+		}
+	}
+}
+
 // NewUploader creates an initialized Uploader instance.
 func NewUploader(storage Storage, opts ...Option) (*Uploader, error) {
 	if storage == nil {
@@ -99,6 +109,7 @@ func NewUploader(storage Storage, opts ...Option) (*Uploader, error) {
 		MaxFileSize:  DefaultMaxFileSize,
 		AllowedMimes: DefaultImageMimes,
 		JPEGQuality:  DefaultJPEGQuality,
+		MaxDimension: 10000,
 	}
 
 	for _, opt := range opts {
@@ -179,7 +190,21 @@ func (u *Uploader) UploadImage(ctx context.Context, originalFilename string, r i
 		return nil, ErrInvalidMimeType
 	}
 
-	// 3. Decode image to verify it is genuinely valid and not corrupted
+	// 3. Fast pre-flight check: decode only dimensions to prevent decompression bombs (pixel flood attacks)
+	imgCfg, _, err := DecodeImageConfig(bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+
+	maxDim := u.cfg.MaxDimension
+	if maxDim <= 0 {
+		maxDim = 10000
+	}
+	if imgCfg.Width > maxDim || imgCfg.Height > maxDim {
+		return nil, ErrDecompressionBomb
+	}
+
+	// 4. Safe to decode image pixels into memory
 	img, format, err := DecodeImage(bytes.NewReader(data))
 	if err != nil {
 		return nil, err

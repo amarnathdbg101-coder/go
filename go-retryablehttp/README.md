@@ -1,5 +1,8 @@
 # go-retryablehttp 🔄
 
+> [!NOTE]
+> **Consolidation Notice**: Yeh package ab full resilience features (Body Rewinding via `GetBody`, `Retry-After` header parsing, `OnRetry` observability callbacks, aur Circuit Breaker) ke sath **[`go-httpclient`](../go-httpclient)** me consolidate ho chuka hai. Naye projects ke liye `go-httpclient` ka use recommend kiya jata hai. Existing code backward-compatible rahega.
+
 > **Resilient, Zero-Dependency HTTP Client Wrapper for Go (Go 1.23+).**  
 > Go ke standard `net/http` client me agar POST request retry karni pade, toh pehli attempt ke baad body drain ho jati hai aur retry fail ho jati hai. `go-retryablehttp` request body ko auto-rewind karta hai, `Retry-After` headers ko parse karta hai, aur full-jitter backoff ke sath safe microservice communication deta hai.
 

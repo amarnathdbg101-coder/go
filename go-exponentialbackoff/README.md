@@ -1,5 +1,7 @@
 # go-exponentialbackoff
 
+> 💡 **Consolidation Notice**: This library's backoff and jitter algorithms have been consolidated directly into [`go-retry`](../go-retry). For new projects, prefer importing [`go-retry`](../go-retry) directly for complete retry execution + jitter algorithms in a single package.
+
 Mathematical exponential backoff and AWS-recommended jitter strategies for Go.
 
 ---

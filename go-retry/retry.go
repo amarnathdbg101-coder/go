@@ -104,10 +104,8 @@ func Do(ctx context.Context, action func(ctx context.Context) error, opts ...Opt
 			cfg.OnRetry(attempt+1, err, delay)
 		}
 
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(delay):
+		if err := sleepWithContext(ctx, delay); err != nil {
+			return err
 		}
 	}
 

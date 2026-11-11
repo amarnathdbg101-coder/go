@@ -312,3 +312,173 @@ func TestJSON_Serialization_NullArrayPrevention(t *testing.T) {
 		t.Errorf("expected empty array [] in JSON, got: %s", jsonStr)
 	}
 }
+
+// -------------------------------------------------------------------------
+// 7. Keyset Cursor Request Extraction & Options Tests
+// -------------------------------------------------------------------------
+
+func TestCursorFromRequest_And_Values(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/feed?limit=30&cursor=ZXhhbXBsZQ==&order=asc", nil)
+	cp := paginate.CursorFromRequest(req, 20)
+
+	if cp.Limit != 30 {
+		t.Errorf("expected limit 30, got %d", cp.Limit)
+	}
+	if cp.Cursor != "ZXhhbXBsZQ==" {
+		t.Errorf("expected cursor 'ZXhhbXBsZQ==', got '%s'", cp.Cursor)
+	}
+	if cp.Order != "ASC" {
+		t.Errorf("expected order 'ASC', got '%s'", cp.Order)
+	}
+
+	// Default fallback
+	reqEmpty := httptest.NewRequest(http.MethodGet, "/feed", nil)
+	cpDefault := paginate.CursorFromRequest(reqEmpty, 15)
+	if cpDefault.Limit != 15 || cpDefault.Cursor != "" || cpDefault.Order != "DESC" {
+		t.Errorf("expected default values, got: %+v", cpDefault)
+	}
+}
+
+func TestConfig_Options(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/users?per_page=500", nil)
+	params := paginate.FromRequest(req,
+		paginate.WithDefaults(2, 25, "created_at", "ASC"),
+		paginate.WithMaxPerPage(200),
+	)
+
+	// Since per_page=500 exceeds max 200, it should be capped at 200
+	if params.PerPage != 200 {
+		t.Errorf("expected per_page capped at 200, got %d", params.PerPage)
+	}
+}
+
+func TestPostgres_SQLClauseWithOptions(t *testing.T) {
+	params := paginate.Params{
+		Page:    1,
+		PerPage: 10,
+		Sort:    "deleted_at",
+		Order:   "DESC",
+	}
+
+	// Test NULLS LAST with tie breaker
+	clause, args := paginate.SQLClauseWithOptions(params, 1, paginate.NullsLast, "id")
+
+	expectedClause := `ORDER BY "deleted_at" DESC NULLS LAST, "id" DESC LIMIT $1 OFFSET $2`
+	if clause != expectedClause {
+		t.Errorf("expected '%s', got '%s'", expectedClause, clause)
+	}
+	if len(args) != 2 || args[0] != 10 || args[1] != 0 {
+		t.Errorf("unexpected args: %+v", args)
+	}
+}
+
+func TestPostgres_CompositeCursorWhereClause(t *testing.T) {
+	createdAt := time.Now()
+	id := "order_99"
+
+	whereClause, orderClause, args := paginate.CompositeCursorWhereClause("created_at", "id", createdAt, id, "DESC", 1)
+
+	expectedWhere := `("created_at", "id") < ($1, $2)`
+	expectedOrder := `ORDER BY "created_at" DESC, "id" DESC`
+
+	if whereClause != expectedWhere {
+		t.Errorf("expected where '%s', got '%s'", expectedWhere, whereClause)
+	}
+	if orderClause != expectedOrder {
+		t.Errorf("expected order '%s', got '%s'", expectedOrder, orderClause)
+	}
+	if len(args) != 2 || args[0] != createdAt || args[1] != id {
+		t.Errorf("unexpected args: %+v", args)
+	}
+
+	// Nil cursor values should return empty where clause
+	emptyWhere, _, _ := paginate.CompositeCursorWhereClause("created_at", "id", nil, nil, "DESC", 1)
+	if emptyWhere != "" {
+		t.Errorf("expected empty where for nil values, got '%s'", emptyWhere)
+	}
+}
+
+func TestBuildCursorPage(t *testing.T) {
+	type Item struct {
+		ID   string
+		Name string
+	}
+
+	// Query fetched limit + 1 items (3 items for limit=2)
+	items := []Item{
+		{ID: "1", Name: "Alpha"},
+		{ID: "2", Name: "Beta"},
+		{ID: "3", Name: "Gamma"}, // Extra item indicating has_more=true
+	}
+
+	page := paginate.BuildCursorPage(items, 2, func(item Item) string {
+		return paginate.EncodeCursor(item.ID)
+	})
+
+	if len(page.Data) != 2 {
+		t.Fatalf("expected 2 items after trimming, got %d", len(page.Data))
+	}
+	if !page.Meta.HasMore {
+		t.Errorf("expected HasMore to be true")
+	}
+	if page.Meta.Limit != 2 {
+		t.Errorf("expected limit 2, got %d", page.Meta.Limit)
+	}
+
+	decodedID, err := paginate.DecodeCursor(page.Meta.NextCursor)
+	if err != nil || decodedID != "2" {
+		t.Fatalf("expected next cursor to point to item 2, got '%s', err: %v", decodedID, err)
+	}
+
+	// Test exact count (no more items)
+	exactItems := []Item{
+		{ID: "1", Name: "Alpha"},
+	}
+	pageExact := paginate.BuildCursorPage(exactItems, 2, func(item Item) string {
+		return paginate.EncodeCursor(item.ID)
+	})
+	if pageExact.Meta.HasMore {
+		t.Errorf("expected HasMore false for exact count")
+	}
+	if pageExact.Meta.NextCursor != "" {
+		t.Errorf("expected empty NextCursor when no more pages, got '%s'", pageExact.Meta.NextCursor)
+	}
+}
+
+func TestCursor_EdgeCases(t *testing.T) {
+	// Empty cursor where clause
+	where, order, args := paginate.CursorWhereClause("id", "", "ASC", 1)
+	if where != "" || !strings.Contains(order, "ASC") || len(args) != 0 {
+		t.Errorf("expected empty where for empty cursorVal, got '%s', '%s'", where, order)
+	}
+
+	// Limit fallback when PerPage <= 0
+	p := paginate.Params{PerPage: 0}
+	if p.Limit() != paginate.DefaultPerPage {
+		t.Errorf("expected default limit %d, got %d", paginate.DefaultPerPage, p.Limit())
+	}
+
+	// DecodeCompositeCursor invalid cases
+	_, _, err := paginate.DecodeCompositeCursor("not-valid-base64!!!")
+	if err == nil {
+		t.Error("expected error for invalid base64")
+	}
+
+	// Valid base64 but missing separator ":"
+	_, _, err = paginate.DecodeCompositeCursor("MTIzNDU=") // "12345"
+	if err == nil {
+		t.Error("expected error for composite cursor without colon")
+	}
+
+	// Valid base64 and colon but not integer nano
+	_, _, err = paginate.DecodeCompositeCursor("bm90LWludDppZA==") // "not-int:id"
+	if err == nil {
+		t.Error("expected error for non-integer timestamp nano")
+	}
+
+	// Empty composite cursor
+	ts, id, err := paginate.DecodeCompositeCursor("")
+	if err != nil || !ts.IsZero() || id != "" {
+		t.Errorf("expected zero values for empty composite cursor")
+	}
+}

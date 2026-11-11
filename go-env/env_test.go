@@ -156,3 +156,62 @@ func TestEnv_DumpMasked(t *testing.T) {
 		t.Fatalf("APP_PORT should not be masked: %s", dump["APP_PORT"])
 	}
 }
+
+type ServerConfig struct {
+	Port     int           `env:"PORT,default=8080"`
+	Host     string        `env:"HOST,default=localhost"`
+	Debug    bool          `env:"DEBUG,default=true"`
+	Timeout  time.Duration `env:"TIMEOUT,default=15s"`
+	Tags     []string      `env:"TAGS"`
+	Database DBConfig      `env:"DB"`
+}
+
+type DBConfig struct {
+	User string `env:"USER,required"`
+	Pass string `env:"PASS,default=secret"`
+}
+
+func TestUnmarshal(t *testing.T) {
+	os.Setenv("PORT", "9000")
+	os.Setenv("DEBUG", "false")
+	os.Setenv("TIMEOUT", "30s")
+	os.Setenv("TAGS", "api,v1,prod")
+	os.Setenv("DB_USER", "postgres")
+
+	var cfg ServerConfig
+	err := Unmarshal(&cfg)
+	if err != nil {
+		t.Fatalf("Unmarshal failed: %v", err)
+	}
+
+	if cfg.Port != 9000 {
+		t.Errorf("expected Port 9000, got %d", cfg.Port)
+	}
+	if cfg.Host != "localhost" {
+		t.Errorf("expected default Host localhost, got %s", cfg.Host)
+	}
+	if cfg.Debug != false {
+		t.Errorf("expected Debug false, got %v", cfg.Debug)
+	}
+	if cfg.Timeout != 30*time.Second {
+		t.Errorf("expected Timeout 30s, got %v", cfg.Timeout)
+	}
+	if len(cfg.Tags) != 3 || cfg.Tags[1] != "v1" {
+		t.Errorf("expected Tags [api v1 prod], got %v", cfg.Tags)
+	}
+	if cfg.Database.User != "postgres" {
+		t.Errorf("expected DB User postgres, got %s", cfg.Database.User)
+	}
+	if cfg.Database.Pass != "secret" {
+		t.Errorf("expected default DB Pass secret, got %s", cfg.Database.Pass)
+	}
+
+	// Missing required check
+	os.Unsetenv("DB_USER")
+	var invalidCfg ServerConfig
+	err = Unmarshal(&invalidCfg)
+	if err == nil || !errors.Is(err, ErrRequiredEnvMissing) {
+		t.Fatalf("expected ErrRequiredEnvMissing, got %v", err)
+	}
+}
+

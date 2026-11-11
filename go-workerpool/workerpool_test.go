@@ -160,6 +160,39 @@ func TestPool_GracefulStop(t *testing.T) {
 	}
 }
 
+func TestAdaptivePool_AutoScaling(t *testing.T) {
+	// min: 2, max: 10, queue: 5, idle: 100ms
+	pool := NewAdaptive(2, 10, 5, 100*time.Millisecond)
+	defer pool.Stop()
+
+	if pool.ActiveWorkers() != 2 {
+		t.Fatalf("expected baseline 2 workers, got %d", pool.ActiveWorkers())
+	}
+
+	var count int64
+	var wg sync.WaitGroup
+
+	// Submit 20 parallel slow jobs to trigger worker scaling
+	for i := 0; i < 20; i++ {
+		wg.Add(1)
+		err := pool.Submit(func(ctx context.Context) {
+			defer wg.Done()
+			time.Sleep(10 * time.Millisecond)
+			atomic.AddInt64(&count, 1)
+		})
+		if err != nil {
+			t.Fatalf("failed to submit adaptive task: %v", err)
+		}
+	}
+
+	wg.Wait()
+
+	if atomic.LoadInt64(&count) != 20 {
+		t.Fatalf("expected 20 tasks finished, got %d", count)
+	}
+}
+
+
 func TestPool_ObservabilityHooks(t *testing.T) {
 	var startCount int64
 	var completedCount int64

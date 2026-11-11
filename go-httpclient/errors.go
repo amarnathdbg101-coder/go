@@ -12,6 +12,12 @@ var (
 	// ErrMaxRetriesExceeded indicates all retry attempts failed.
 	ErrMaxRetriesExceeded = errors.New("httpclient: max retries exceeded")
 
+	// ErrNilRequest is returned when an operation is executed on a nil http.Request.
+	ErrNilRequest = errors.New("httpclient: request is nil")
+
+	// ErrMissingGetBody is returned when retrying a request with a body where GetBody is nil.
+	ErrMissingGetBody = errors.New("httpclient: request body cannot be rewound; GetBody is nil")
+
 	// ErrInvalidStatus indicates an unexpected HTTP response status code.
 	ErrInvalidStatus = errors.New("httpclient: unexpected status code")
 )
